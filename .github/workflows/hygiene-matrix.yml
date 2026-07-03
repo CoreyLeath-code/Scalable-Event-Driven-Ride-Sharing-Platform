@@ -23,14 +23,12 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: '3.11'
-          # Removed the global 'cache' key to prevent lookups on non-existent files
 
       - name: Install Linting Suite
         run: pip install ruff black
 
       - name: Enforce Code Style & Linting Contracts
         run: |
-          # If files exist, run check; otherwise pass gracefully to preserve pipeline momentum
           if [ -f "requirements.txt" ]; then pip install -r requirements.txt; fi
           black --check . || echo "Formatting adjustments needed locally via 'black .'"
           ruff check . || echo "Linting issues found."
@@ -49,13 +47,15 @@ jobs:
 
       - name: Compute Next Semantic Version
         id: versioning
-        uses: paulhatch/semantic-version-export@v2
-        with:
-          default_version: 1.0.0
-          tag_prefix: 'v'
+        uses: anothrNick/github-tag-action@1.64.0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          WITH_V: true
+          DEFAULT_BUMP: patch
+          DRY_RUN: true
 
       - name: Output Release Tag
-        run: echo "Target Semantic Tag engineered successfully to -> ${{ steps.versioning.outputs.version }}"
+        run: echo "Target Semantic Tag engineered successfully."
 
   # 3. Continuous Integration & Telemetry / Core Engine Analysis Matrix
   core-engine-matrix:
@@ -134,13 +134,13 @@ jobs:
       - name: Checkout Blueprint
         uses: actions/checkout@v4
         with:
-          fetch-depth: 0 # Fetches history to allow TruffleHog to parse commits correctly
+          fetch-depth: 0
 
       - name: Run Secret Scanning Guard
         uses: trufflesecurity/trufflehog@main
         with:
           path: ./
-          base: "" # Clears the base variable to avoid branch differential identity conflicts
+          base: ""
           head: HEAD
           extra_args: --only-verified
 
