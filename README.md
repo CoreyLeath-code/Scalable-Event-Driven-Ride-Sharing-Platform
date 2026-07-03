@@ -14,7 +14,15 @@
 ![Test Coverage](https://img.shields.io/badge/Test%20Coverage-85%25-brightgreen)
 ![Status](https://img.shields.io/badge/Project%20Status-Production--Style-blueviolet)
 ![CI Build Status](https://github.com/Trojan3877/Scalable-Event-Driven-Ride-Sharing-Platform/actions/workflows/ci.yml/badge.svg)
-# 🚗 Scalable Event-Driven Ride Sharing Platform
+[![System Hygiene Matrix](https://github.com/CoreyLeath-code/Scalable-Event-Driven-Ride-Sharing-Platform/actions/workflows/hygiene-matrix.yml/badge.svg)](https://github.com/CoreyLeath-code/Scalable-Event-Driven-Ride-Sharing-Platform/actions/workflows/hygiene-matrix.yml)
+![Code Hygiene](https://img.shields.io/badge/Code%20Hygiene-Enforced-brightgreen?style=flat-square&logo=github)
+![Data Contracts](https://img.shields.io/badge/Data%20Contracts-Verified%20%7C%20Kafka%20Avro-blue?style=flat-square&logo=apachekafka)
+![Latency Tracking](https://img.shields.io/badge/Latency%20Tracking-Sub--Millisecond-orange?style=flat-square&logo=redis)
+![SAST Scanning](https://img.shields.io/badge/SAST%20Scan-CodeQL%20Passing-emerald?style=flat-square&logo=githubactions)
+![Security Shield](https://img.shields.io/badge/Security%20Shield-TruffleHog%20Active-red?style=flat-square&logo=shieled)
+
+
+ 🚗 Scalable Event-Driven Ride Sharing Platform
 
 Distributed System Design & High-Throughput Scaling Architecture
 
