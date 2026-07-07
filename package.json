@@ -1,0 +1,12 @@
+{
+  "name": "event-driven-ride-sharing-platform",
+  "version": "1.0.0",
+  "description": "Scalable event-driven ride-sharing architecture",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/CoreyLeath-code/Scalable-Event-Driven-Ride-Sharing-Platform.git"
+  },
+  "release": {
+    "branches": ["main"]
+  }
+}
