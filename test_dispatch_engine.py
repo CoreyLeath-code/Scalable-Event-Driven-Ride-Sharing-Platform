@@ -1,4 +1,4 @@
-from datetime import UTC, datetime
+from datetime import datetime, timezone
 
 from matching_engine import MatchingEngine
 from models import DriverLocationEvent, TripRequestEvent
@@ -6,7 +6,7 @@ from models import DriverLocationEvent, TripRequestEvent
 
 def test_dispatch_engine_selects_closest_driver():
     engine = MatchingEngine()
-    timestamp = datetime.now(UTC)
+    timestamp = datetime.now(timezone.utc)
 
     drivers = [
         DriverLocationEvent(

@@ -63,12 +63,12 @@ Benchmark environment:
 
 | Area | Workload | Recorded Result | Research Interpretation |
 | --- | --- | ---: | --- |
-| Event bus publish | 500 in-memory `ride.requested` events | 0.009359 ms avg publish latency | Validates low-overhead async fanout for local simulation. |
+| Event bus publish | 500 in-memory `ride.requested` events | 0.023745 ms avg publish latency | Validates low-overhead async fanout for local simulation. |
 | Event delivery | 500 published events | 500 delivered messages | Confirms no message loss in the in-memory event bus harness. |
-| Matching engine | 500 matches over 100 candidate drivers | 0.038491 ms avg match latency | Candidate ranking remains sub-millisecond for small local pools. |
+| Matching engine | 500 matches over 100 candidate drivers | 0.074141 ms avg match latency | Candidate ranking remains sub-millisecond for small local pools. |
 | Matching selection | Deterministic synthetic pickup near driver 10 | `driver-10` selected | Confirms nearest-candidate behavior under controlled coordinates. |
-| Driver location store | 500 upserts | 0.002303 ms avg upsert latency | In-memory telemetry writes are suitable for unit-level simulation. |
-| Pricing engine | 500 surge calculations | 0.002391 ms avg compute latency | Demand/supply pricing calculation is effectively negligible locally. |
+| Driver location store | 500 upserts | 0.00402 ms avg upsert latency | In-memory telemetry writes are suitable for unit-level simulation. |
+| Pricing engine | 500 surge calculations | 0.004456 ms avg compute latency | Demand/supply pricing calculation is effectively negligible locally. |
 | Surge output | Demand 50-59, supply 20 | Last multiplier 1.44x | Confirms high-demand zone pricing response. |
 
 ### Engineering Quality Metrics

@@ -1,6 +1,6 @@
 import uuid
 import logging
-from datetime import UTC, datetime
+from datetime import datetime, timezone
 
 # ----------------------------
 # Logging Setup
@@ -45,7 +45,7 @@ def generate_id(prefix: str = "") -> str:
 
 def now_timestamp() -> datetime:
     """Return a timezone-aware UTC timestamp."""
-    return datetime.now(UTC)
+    return datetime.now(timezone.utc)
 
 
 def utc_now() -> datetime:

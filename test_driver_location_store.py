@@ -1,4 +1,4 @@
-from datetime import UTC, datetime
+from datetime import datetime, timezone
 
 from location_store import DriverLocationStore
 from models import DriverLocationEvent
@@ -11,7 +11,7 @@ def test_driver_location_store_updates_and_retrieves():
         driver_id="d1",
         lat=40.7128,
         lon=-74.0060,
-        timestamp=datetime.now(UTC),
+        timestamp=datetime.now(timezone.utc),
         status="available",
     )
 
@@ -28,7 +28,7 @@ def test_driver_location_store_removes_and_clears():
         driver_id="d1",
         lat=40.7128,
         lon=-74.0060,
-        timestamp=datetime.now(UTC),
+        timestamp=datetime.now(timezone.utc),
         status="available",
     )
 

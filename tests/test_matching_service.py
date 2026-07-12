@@ -1,11 +1,11 @@
-from datetime import UTC, datetime
+from datetime import datetime, timezone
 
 from matching_engine import MatchingEngine
 from models import DriverLocationEvent, TripRequestEvent
 
 
 def test_matching_engine_ranks_nearest_driver_first():
-    timestamp = datetime.now(UTC)
+    timestamp = datetime.now(timezone.utc)
     trip = TripRequestEvent(
         rider_id="rider-42",
         pickup_lat=40.0,

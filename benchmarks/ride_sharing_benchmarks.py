@@ -5,7 +5,7 @@ import logging
 import statistics
 import sys
 import time
-from datetime import UTC, datetime
+from datetime import datetime, timezone
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -58,7 +58,7 @@ async def benchmark_event_bus(iterations):
 
 
 def benchmark_matching(iterations, driver_count):
-    timestamp = datetime.now(UTC)
+    timestamp = datetime.now(timezone.utc)
     engine = MatchingEngine(max_candidates=25)
     drivers = [_driver(index, timestamp) for index in range(driver_count)]
     trip = TripRequestEvent(
@@ -87,7 +87,7 @@ def benchmark_matching(iterations, driver_count):
 
 
 def benchmark_location_store(iterations):
-    timestamp = datetime.now(UTC)
+    timestamp = datetime.now(timezone.utc)
     store = DriverLocationStore()
     samples = []
 
