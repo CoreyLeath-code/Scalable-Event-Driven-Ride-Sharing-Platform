@@ -8,10 +8,16 @@ logs:
 	docker-compose logs -f
 
 test:
-	pytest --cov=services tests/
+	pytest --cov=. --cov-report=term-missing
+
+install:
+	python -m pip install -r requirements.txt -r requirements-dev.txt
 
 lock-dev:
-	pip-compile --generate-hashes requirements-dev.txt --output-file requirements-dev.lock
+	pip-compile --generate-hashes --allow-unsafe requirements-dev.txt --output-file requirements-dev.lock
 
 sync-dev:
-	pip-sync requirements-dev.lock
+	python -m pip install -r requirements.txt -r requirements-dev.txt
+
+benchmark:
+	python benchmarks/ride_sharing_benchmarks.py --output benchmark-results.json

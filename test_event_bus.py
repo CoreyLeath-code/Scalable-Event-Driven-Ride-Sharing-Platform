@@ -1,12 +1,13 @@
 import asyncio
-import pytest
 
-from src.common.event_bus import EventBus
+from event_bus import EventBus
 
 
-@pytest.mark.asyncio
-async def test_event_bus_publish_and_subscribe():
+def test_event_bus_publish_and_subscribe():
+    asyncio.run(_publish_and_subscribe())
 
+
+async def _publish_and_subscribe():
     bus = EventBus()
     received_messages = []
 
@@ -24,3 +25,15 @@ async def test_event_bus_publish_and_subscribe():
 
     assert len(received_messages) == 1
     assert received_messages[0]["value"] == 123
+
+
+def test_event_bus_no_subscribers_is_safe():
+    asyncio.run(_publish_without_subscribers())
+
+
+async def _publish_without_subscribers():
+    bus = EventBus()
+
+    await bus.publish("missing_topic", {"value": "ignored"})
+
+    assert "missing_topic" not in bus.subscribers

@@ -2,7 +2,7 @@ import asyncio
 from collections import defaultdict
 from typing import Callable, Dict, List, Any
 
-from src.common.utils import get_logger
+from utils import get_logger
 
 logger = get_logger("EventBus")
 
@@ -25,7 +25,7 @@ class EventBus:
 
     async def publish(self, topic: str, message: Any):
         """
-        Publish an event to a topic. 
+        Publish an event to a topic.
         Invokes all subscribers concurrently.
         """
         if topic not in self.subscribers:
@@ -34,12 +34,10 @@ class EventBus:
 
         logger.info(f"[EVENT BUS] Publishing to {topic}: {message}")
 
-        callbacks = self.subscribers[topic]
+        callbacks = list(self.subscribers[topic])
 
         # Run all subscribers concurrently
-        await asyncio.gather(*[
-            callback(message) for callback in callbacks
-        ])
+        await asyncio.gather(*(callback(message) for callback in callbacks))
 
     async def subscribe(self, topic: str, callback: Callable):
         """

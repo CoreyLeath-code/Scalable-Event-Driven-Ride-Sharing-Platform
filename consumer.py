@@ -1,6 +1,7 @@
 from typing import Dict
-from src.common.models import DriverLocationEvent
-from src.common.utils import get_logger
+
+from models import DriverLocationEvent
+from utils import get_logger
 
 logger = get_logger("DriverLocationConsumer")
 
@@ -43,9 +44,7 @@ class DriverLocationConsumer:
         # Update the driver store
         self.store.upsert_driver(event)
 
-        self.logger.info(
-            f"Driver update processed: {event.driver_id} @ ({event.lat}, {event.lon})"
-        )
+        self.logger.info(f"Driver update processed: {event.driver_id} @ ({event.lat}, {event.lon})")
 
     # ------------------------------------------------------------
     # Subscribe to EventBus Topic
@@ -56,7 +55,4 @@ class DriverLocationConsumer:
         Begins listening to driver_location_updates topic.
         """
         self.logger.info("DriverLocationConsumer listening for driver updates...")
-        await self.event_bus.subscribe(
-            "driver_location_updates",
-            self.handle_driver_location
-        )
+        await self.event_bus.subscribe("driver_location_updates", self.handle_driver_location)

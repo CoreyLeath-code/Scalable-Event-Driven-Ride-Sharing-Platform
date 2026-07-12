@@ -1,6 +1,6 @@
- from fastapi import APIRouter, HTTPException
-from src.common.utils import get_logger
-from src.common.models import DriverLocationEvent
+from fastapi import APIRouter, HTTPException
+
+from utils import get_logger
 
 logger = get_logger("DriverLocationAPI")
 router = APIRouter()
@@ -18,10 +18,7 @@ async def get_all_drivers():
         raise HTTPException(500, "Driver store not initialized.")
 
     drivers = DRIVER_STORE.get_all_drivers()
-    return {
-        "count": len(drivers),
-        "drivers": drivers
-    }
+    return {"count": len(drivers), "drivers": drivers}
 
 
 @router.get("/drivers/{driver_id}")
@@ -55,7 +52,4 @@ async def health_check():
     """
     Returns service health.
     """
-    return {
-        "status": "OK",
-        "service": "driver-location-service"
-    }
+    return {"status": "OK", "service": "driver-location-service"}

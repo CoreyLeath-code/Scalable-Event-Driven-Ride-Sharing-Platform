@@ -1,14 +1,11 @@
-import asyncio
 from fastapi import FastAPI
 
-from src.common.event_bus import EventBus
-from src.common.utils import get_logger
-from src.common.models import DriverLocationEvent
-
-from src.driver-location-service.location_store import DriverLocationStore
-from src.driver-location-service.consumer import DriverLocationConsumer
-from src.driver-location-service.api_router import router, DRIVER_STORE
-
+import api_router
+from api_router import router
+from consumer import DriverLocationConsumer
+from event_bus import EventBus
+from location_store import DriverLocationStore
+from utils import get_logger
 
 # ------------------------------------------------------------
 # INITIALIZATION
@@ -30,26 +27,20 @@ app = FastAPI(
 # STARTUP SEQUENCE
 # ------------------------------------------------------------
 
+
 @app.on_event("startup")
 async def startup_event():
 
     logger.info("Starting Driver Location Service...")
 
     # Inject store into API router
-    global DRIVER_STORE
-    DRIVER_STORE = driver_store
+    api_router.DRIVER_STORE = driver_store
 
     # Initialize consumer
-    consumer = DriverLocationConsumer(
-        event_bus=event_bus,
-        store=driver_store
-    )
+    consumer = DriverLocationConsumer(event_bus=event_bus, store=driver_store)
 
     # Subscribe to driver location update events
-    await event_bus.subscribe(
-        "driver_location_updates",
-        consumer.handle_driver_location
-    )
+    await event_bus.subscribe("driver_location_updates", consumer.handle_driver_location)
 
     logger.info("Driver Location Service started successfully.")
 
@@ -69,8 +60,8 @@ if __name__ == "__main__":
     import uvicorn
 
     uvicorn.run(
-        "src.driver-location-service.main:app",
+        "main:app",
         host="0.0.0.0",
         port=8003,
-        reload=True
+        reload=True,
     )

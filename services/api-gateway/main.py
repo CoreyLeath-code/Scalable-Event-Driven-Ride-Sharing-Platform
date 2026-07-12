@@ -11,8 +11,13 @@ logger = setup_logging()
 
 
 @app.post("/request-ride")
-def request_ride(rider_id: str, pickup_lat: float, pickup_lng: float,
-                 destination_lat: float, destination_lng: float):
+def request_ride(
+    rider_id: str,
+    pickup_lat: float,
+    pickup_lng: float,
+    destination_lat: float,
+    destination_lng: float,
+):
 
     ride_event = RideRequestedEvent(
         ride_id=uuid4(),
@@ -21,7 +26,7 @@ def request_ride(rider_id: str, pickup_lat: float, pickup_lng: float,
         pickup_lng=pickup_lng,
         destination_lat=destination_lat,
         destination_lng=destination_lng,
-        timestamp=datetime.utcnow()
+        timestamp=datetime.utcnow(),
     )
 
     publish_event(settings.KAFKA_TOPIC_RIDE_REQUESTED, ride_event.dict())

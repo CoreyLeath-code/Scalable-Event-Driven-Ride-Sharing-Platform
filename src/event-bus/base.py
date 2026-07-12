@@ -1,5 +1,6 @@
 from abc import ABC, abstractmethod
 
+
 class EventBus(ABC):
     """
     Base interface for all event bus backends.

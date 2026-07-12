@@ -1,5 +1,4 @@
 import json
-import asyncio
 import aioredis
 from .base import EventBus
 

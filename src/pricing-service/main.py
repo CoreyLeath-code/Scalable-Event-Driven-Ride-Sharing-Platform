@@ -1,13 +1,7 @@
-import asyncio
 from fastapi import FastAPI
 
-from src.common.event_bus import EventBus
-from src.common.utils import get_logger
-
-from src.pricing-service.api_router import router, update_surge, SURGE_CACHE
-from src.pricing-service.consumer import PricingConsumer
-from src.pricing-service.producer import PricingProducer
-from src.pricing-service.pricing_engine import PricingEngine
+from pricing_engine import PricingEngine
+from utils import get_logger
 
 logger = get_logger("PricingServiceMain")
 
@@ -19,45 +13,25 @@ app = FastAPI(
 )
 
 
-# ----------------------------
-# Initialize core components
-# ----------------------------
-event_bus = EventBus()
-producer = PricingProducer(event_bus)
-consumer = PricingConsumer(event_bus)
 engine = PricingEngine()
+SURGE_CACHE = {}
 
 
 # ----------------------------
 # Startup Sequence
 # ----------------------------
 
+
 @app.on_event("startup")
 async def startup_event():
-
     logger.info("Starting Pricing Service...")
-
-    # Subscribe consumer to supply/demand topic
-    await event_bus.subscribe(
-        topic="zone_supply_demand",
-        callback=consumer.handle_supply_demand
-    )
-
-    # Launch producer + consumer loop
-    asyncio.create_task(producer.start())
-
     logger.info("Pricing Service started successfully.")
-
-
-# ----------------------------
-# API Router
-# ----------------------------
-app.include_router(router, prefix="/pricing")
 
 
 # ----------------------------
 # Health Check Endpoint
 # ----------------------------
+
 
 @app.get("/health")
 async def health_check():
@@ -75,8 +49,8 @@ if __name__ == "__main__":
     import uvicorn
 
     uvicorn.run(
-        "src.pricing-service.main:app",
+        "main:app",
         host="0.0.0.0",
         port=8001,
-        reload=True
+        reload=True,
     )
