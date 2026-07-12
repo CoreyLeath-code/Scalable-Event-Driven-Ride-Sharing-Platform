@@ -1,4 +1,3 @@
-import asyncio
 import json
 import aio_pika
 from .base import EventBus
@@ -22,8 +21,7 @@ class RabbitMQEventBus(EventBus):
     async def publish(self, topic: str, message: dict):
         queue = await self.channel.declare_queue(topic, durable=True)
         await self.channel.default_exchange.publish(
-            aio_pika.Message(body=json.dumps(message).encode()),
-            routing_key=queue.name
+            aio_pika.Message(body=json.dumps(message).encode()), routing_key=queue.name
         )
 
     async def subscribe(self, topic: str, handler):

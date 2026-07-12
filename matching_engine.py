@@ -1,8 +1,8 @@
 from typing import List, Optional
 from math import sqrt
 
-from src.common.models import DriverLocationEvent, TripRequestEvent, MatchResultEvent
-from src.common.utils import get_logger, now_timestamp
+from models import DriverLocationEvent, MatchResultEvent, TripRequestEvent
+from utils import get_logger, now_timestamp
 
 
 class MatchingEngine:
@@ -67,7 +67,7 @@ class MatchingEngine:
         self,
         drivers: List[DriverLocationEvent],
         trip: TripRequestEvent,
-        surge_multiplier: float
+        surge_multiplier: float,
     ) -> List[DriverLocationEvent]:
         """
         Sort drivers by score (descending).
@@ -75,10 +75,7 @@ class MatchingEngine:
         scored = []
 
         for d in drivers:
-            dist = self._distance(
-                d.lat, d.lon,
-                trip.pickup_lat, trip.pickup_lon
-            )
+            dist = self._distance(d.lat, d.lon, trip.pickup_lat, trip.pickup_lon)
 
             score = self._score_driver(dist, surge_multiplier)
             scored.append((score, d))
@@ -97,7 +94,7 @@ class MatchingEngine:
         self,
         drivers: List[DriverLocationEvent],
         trip: TripRequestEvent,
-        surge_multiplier: float
+        surge_multiplier: float,
     ) -> Optional[MatchResultEvent]:
         """
         Selects the highest-ranked driver and returns a MatchResultEvent.
@@ -109,10 +106,7 @@ class MatchingEngine:
         ranked = self.rank_drivers(drivers, trip, surge_multiplier)
         best = ranked[0]
 
-        distance = self._distance(
-            best.lat, best.lon,
-            trip.pickup_lat, trip.pickup_lon
-        )
+        distance = self._distance(best.lat, best.lon, trip.pickup_lat, trip.pickup_lon)
         eta = self._estimate_eta(distance)
 
         match_event = MatchResultEvent(

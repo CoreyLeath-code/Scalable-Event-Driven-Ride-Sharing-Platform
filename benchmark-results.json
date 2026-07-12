@@ -1,0 +1,26 @@
+{
+  "benchmark_version": 1,
+  "runtime": "python",
+  "iterations": 500,
+  "event_bus": {
+    "iterations": 500,
+    "avg_publish_ms": 0.009359,
+    "messages_delivered": 500
+  },
+  "matching": {
+    "iterations": 500,
+    "candidate_drivers": 100,
+    "avg_match_ms": 0.038491,
+    "selected_driver": "driver-10"
+  },
+  "location_store": {
+    "iterations": 500,
+    "avg_upsert_ms": 0.002303,
+    "stored_drivers": 500
+  },
+  "pricing": {
+    "iterations": 500,
+    "avg_compute_ms": 0.002391,
+    "last_surge_multiplier": 1.44
+  }
+}

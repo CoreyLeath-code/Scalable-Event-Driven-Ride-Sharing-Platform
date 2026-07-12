@@ -1,4 +1,3 @@
-import asyncio
 import json
 from aiokafka import AIOKafkaProducer, AIOKafkaConsumer
 from .base import EventBus
@@ -19,7 +18,7 @@ class KafkaEventBus(EventBus):
     async def connect(self):
         self.producer = AIOKafkaProducer(
             bootstrap_servers=self.bootstrap_servers,
-            value_serializer=lambda v: json.dumps(v).encode("utf-8")
+            value_serializer=lambda v: json.dumps(v).encode("utf-8"),
         )
         await self.producer.start()
 
@@ -33,7 +32,7 @@ class KafkaEventBus(EventBus):
             topic,
             bootstrap_servers=self.bootstrap_servers,
             group_id=self.group_id,
-            value_deserializer=lambda v: json.loads(v.decode("utf-8"))
+            value_deserializer=lambda v: json.loads(v.decode("utf-8")),
         )
         await consumer.start()
 

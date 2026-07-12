@@ -1,6 +1,7 @@
-from typing import Dict, List
-from src.common.models import DriverLocationEvent
-from src.common.utils import get_logger
+from typing import Dict, List, Optional
+
+from models import DriverLocationEvent
+from utils import get_logger
 
 logger = get_logger("DriverLocationStore")
 
@@ -27,14 +28,14 @@ class DriverLocationStore:
     # Core Operations
     # ------------------------------------------------------------
 
-    def upsert_driver(self, event: DriverLocationEvent):
+    def upsert_driver(self, event: DriverLocationEvent) -> None:
         """
         Add or update driver in the store.
         """
         self.drivers[event.driver_id] = event
         logger.info(f"Updated driver {event.driver_id} at ({event.lat}, {event.lon})")
 
-    def remove_driver(self, driver_id: str):
+    def remove_driver(self, driver_id: str) -> None:
         """
         Remove a driver from the store.
         """
@@ -52,7 +53,7 @@ class DriverLocationStore:
         """
         return list(self.drivers.values())
 
-    def get_driver(self, driver_id: str) -> DriverLocationEvent:
+    def get_driver(self, driver_id: str) -> Optional[DriverLocationEvent]:
         """
         Fetch a single driver by ID.
         """
@@ -68,7 +69,7 @@ class DriverLocationStore:
         """
         return len(self.drivers)
 
-    def clear(self):
+    def clear(self) -> None:
         """
         Remove all drivers (reset state).
         """

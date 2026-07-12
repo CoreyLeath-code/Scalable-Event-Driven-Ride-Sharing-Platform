@@ -1,11 +1,11 @@
-from typing import Optional
-from pydantic import BaseModel
 from datetime import datetime
 
+from pydantic import BaseModel
 
 # ----------------------------
 # Pricing Events
 # ----------------------------
+
 
 class PricingEvent(BaseModel):
     zone_id: str
@@ -19,6 +19,7 @@ class PricingEvent(BaseModel):
 # Driver Telemetry Events
 # ----------------------------
 
+
 class DriverLocationEvent(BaseModel):
     driver_id: str
     lat: float
@@ -30,6 +31,7 @@ class DriverLocationEvent(BaseModel):
 # ----------------------------
 # Rider Trip Request Events
 # ----------------------------
+
 
 class TripRequestEvent(BaseModel):
     rider_id: str
@@ -43,6 +45,7 @@ class TripRequestEvent(BaseModel):
 # ----------------------------
 # Trip Matching Results
 # ----------------------------
+
 
 class MatchResultEvent(BaseModel):
     trip_id: str
@@ -60,6 +63,7 @@ class MatchResultEvent(BaseModel):
 # - RideCompletionEvent
 # - ZoneAggregationEvent
 # ----------------------------
+
 
 class PaymentEvent(BaseModel):
     trip_id: str

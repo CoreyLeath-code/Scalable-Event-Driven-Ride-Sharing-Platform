@@ -1,11 +1,11 @@
 import uuid
 import logging
-from datetime import datetime
-
+from datetime import UTC, datetime
 
 # ----------------------------
 # Logging Setup
 # ----------------------------
+
 
 def get_logger(name: str):
     """
@@ -17,8 +17,7 @@ def get_logger(name: str):
     if not logger.handlers:
         handler = logging.StreamHandler()
         formatter = logging.Formatter(
-            "[%(asctime)s] [%(name)s] [%(levelname)s] %(message)s",
-            datefmt="%Y-%m-%d %H:%M:%S"
+            "[%(asctime)s] [%(name)s] [%(levelname)s] %(message)s", datefmt="%Y-%m-%d %H:%M:%S"
         )
         handler.setFormatter(formatter)
         logger.addHandler(handler)
@@ -29,6 +28,7 @@ def get_logger(name: str):
 # ----------------------------
 # UUID Helper
 # ----------------------------
+
 
 def generate_id(prefix: str = "") -> str:
     """
@@ -42,14 +42,21 @@ def generate_id(prefix: str = "") -> str:
 # Timestamp Helper
 # ----------------------------
 
+
 def now_timestamp() -> datetime:
-    """Returns a timezone-aware timestamp."""
-    return datetime.utcnow()
+    """Return a timezone-aware UTC timestamp."""
+    return datetime.now(UTC)
+
+
+def utc_now() -> datetime:
+    """Alias used by service engines that need explicit UTC timestamps."""
+    return now_timestamp()
 
 
 # ----------------------------
 # Zone Utility Helper
 # ----------------------------
+
 
 def zone_from_coordinates(lat: float, lon: float) -> str:
     """

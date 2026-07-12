@@ -13,15 +13,10 @@ def run():
         ride_data = message.value
 
         driver_assigned = DriverAssignedEvent(
-            ride_id=ride_data["ride_id"],
-            driver_id=uuid4(),
-            assigned_at=datetime.utcnow()
+            ride_id=ride_data["ride_id"], driver_id=uuid4(), assigned_at=datetime.utcnow()
         )
 
-        publish_event(
-            settings.KAFKA_TOPIC_DRIVER_ASSIGNED,
-            driver_assigned.dict()
-        )
+        publish_event(settings.KAFKA_TOPIC_DRIVER_ASSIGNED, driver_assigned.dict())
 
 
 if __name__ == "__main__":

@@ -1,21 +1,36 @@
-import pytest
+from datetime import UTC, datetime
 
-from src.dispatch-service.dispatch_engine import DispatchEngine
+from matching_engine import MatchingEngine
+from models import DriverLocationEvent, TripRequestEvent
 
 
 def test_dispatch_engine_selects_closest_driver():
-
-    engine = DispatchEngine()
+    engine = MatchingEngine()
+    timestamp = datetime.now(UTC)
 
     drivers = [
-        {"driver_id": "A", "latitude": 40.0, "longitude": -74.0},
-        {"driver_id": "B", "latitude": 40.1, "longitude": -74.0},
-        {"driver_id": "C", "latitude": 41.0, "longitude": -74.0},
+        DriverLocationEvent(
+            driver_id="A", lat=40.0, lon=-74.0, timestamp=timestamp, status="available"
+        ),
+        DriverLocationEvent(
+            driver_id="B", lat=40.1, lon=-74.0, timestamp=timestamp, status="available"
+        ),
+        DriverLocationEvent(
+            driver_id="C", lat=41.0, lon=-74.0, timestamp=timestamp, status="available"
+        ),
     ]
 
-    rider = {"latitude": 40.05, "longitude": -74.0}
+    rider = TripRequestEvent(
+        rider_id="rider-1",
+        pickup_lat=40.05,
+        pickup_lon=-74.0,
+        dropoff_lat=40.8,
+        dropoff_lon=-73.9,
+        timestamp=timestamp,
+    )
 
-    selected = engine.select_driver(drivers, rider)
+    selected = engine.select_best_match(drivers, rider, surge_multiplier=1.0)
 
-    assert selected["driver_id"] == "A" or selected["driver_id"] == "B"
+    assert selected is not None
+    assert selected.driver_id in {"A", "B"}
     # Both A and B are close; acceptable tie

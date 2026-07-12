@@ -2,141 +2,169 @@ name: "System Hygiene & Core Engine Verification Matrix"
 
 on:
   push:
-    branches: [ "main", "development" ]
+    branches: ["main", "development"]
   pull_request:
-    branches: [ "main" ]
+    branches: ["main"]
 
 permissions:
-  contents: write
+  contents: read
   security-events: write
 
 jobs:
-  # 1. Code Quality Assurance / Code Hygiene Enforcement
   code-hygiene:
-    name: "Code Quality Assurance / Code Hygiene Enforcement"
+    name: "Code Quality Assurance"
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout Blueprint
+      - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Set up Python Environment
+      - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: '3.11'
+          python-version: "3.11"
+          cache: pip
+          cache-dependency-path: |
+            requirements.txt
+            requirements-dev.txt
 
-      - name: Install Linting Suite
-        run: pip install ruff black
-
-      - name: Enforce Code Style & Linting Contracts
+      - name: Install dependencies
         run: |
-          if [ -f "requirements.txt" ]; then pip install -r requirements.txt; fi
-          black --check . || echo "Formatting adjustments needed locally via 'black .'"
-          ruff check . || echo "Linting issues found."
+          python -m pip install --upgrade pip
+          python -m pip install -r requirements.txt -r requirements-dev.txt
 
-  # 2. Automated Release Engineering / Construct Semantic Version Tags
-  release-engineering:
-    name: "Automated Release Engineering / Construct Semantic Version Tags"
-    needs: [code-hygiene]
-    runs-on: ubuntu-latest
-    if: github.ref == 'refs/heads/main'
-    steps:
-      - name: Checkout Blueprint
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
+      - name: Enforce formatting and linting
+        run: |
+          black --check . --line-length=100
+          ruff check .
 
-      - name: Compute Next Semantic Version
-        id: versioning
-        uses: anothrNick/github-tag-action@1.64.0
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          WITH_V: true
-          DEFAULT_BUMP: patch
-          DRY_RUN: true
+      - name: Hygiene summary
+        if: always()
+        run: |
+          {
+            echo "## Code Hygiene Summary"
+            echo ""
+            echo "- Formatter: black"
+            echo "- Linter: ruff"
+          } >> "$GITHUB_STEP_SUMMARY"
 
-      - name: Output Release Tag
-        run: echo "Target Semantic Tag engineered successfully."
-
-  # 3. Continuous Integration & Telemetry / Core Engine Analysis Matrix
   core-engine-matrix:
-    name: "Continuous Integration & Telemetry / Core Engine Analysis Matrix"
+    name: "Core Engine Tests (${{ matrix.python-version }})"
     needs: [code-hygiene]
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        python-version: ['3.10', '3.11']
+        python-version: ["3.10", "3.11"]
     steps:
-      - name: Checkout Blueprint
+      - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Spin up Environment Matrix (${{ matrix.python-version }})
+      - name: Set up Python
         uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python-version }}
+          cache: pip
+          cache-dependency-path: |
+            requirements.txt
+            requirements-dev.txt
 
-      - name: Install Application Dependencies
+      - name: Install dependencies
         run: |
-          if [ -f "requirements.txt" ]; then pip install -r requirements.txt; fi
-          pip install pytest pytest-asyncio
+          python -m pip install --upgrade pip
+          python -m pip install -r requirements.txt -r requirements-dev.txt
 
-      - name: Execute Asynchronous Test Engine
+      - name: Run tests
+        run: pytest --cov=. --cov-report=term-missing
+
+      - name: Test summary
+        if: always()
         run: |
-          if [ -d "tests/unit" ]; then
-            pytest tests/unit/ -v
-          else
-            echo "No unit tests found yet. Skipping engine execution matrix safely."
-          fi
+          {
+            echo "## Core Engine Test Summary"
+            echo ""
+            echo "- Python: ${{ matrix.python-version }}"
+            echo "- Test command: pytest --cov=. --cov-report=term-missing"
+          } >> "$GITHUB_STEP_SUMMARY"
 
-  # 4. Performance Benchmarking / Core Engine Latency Tracking
   latency-tracking:
-    name: "Performance Benchmarking / Core Engine Latency Tracking"
+    name: "Performance Benchmarking"
     needs: [core-engine-matrix]
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout Blueprint
+      - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Initialize Cache and Benchmarking Environment
+      - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: '3.11'
+          python-version: "3.11"
+          cache: pip
+          cache-dependency-path: |
+            requirements.txt
+            requirements-dev.txt
 
-      - name: Install Benchmarking Harness
-        run: pip install pytest-benchmark Redis
-
-      - name: Track Geospatial & Matching Latency Benchmarks
+      - name: Install dependencies
         run: |
-          echo "Executing isolated performance profile for Redis spatial lookups..."
-          echo "Performance tracking successful. All matching routines are sub-millisecond."
+          python -m pip install --upgrade pip
+          python -m pip install -r requirements.txt -r requirements-dev.txt
 
-  # 5. SAST Code Scan / Custom Code Flaw Analysis
+      - name: Track matching and event latency
+        run: python benchmarks/ride_sharing_benchmarks.py --iterations 500 --driver-count 100 --output benchmark-results.json
+
+      - name: Validate benchmark JSON
+        run: python -m json.tool benchmark-results.json > /tmp/benchmark-results.pretty.json
+
+      - name: Upload benchmark artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: hygiene-matrix-benchmark-results
+          path: benchmark-results.json
+
+      - name: Benchmark summary
+        if: always()
+        run: |
+          {
+            echo "## Benchmark Summary"
+            echo ""
+            echo "- Harness: benchmarks/ride_sharing_benchmarks.py"
+            echo "- Output: benchmark-results.json"
+          } >> "$GITHUB_STEP_SUMMARY"
+
   sast-scan:
-    name: "SAST Code Scan / Custom Code Flaw Analysis"
+    name: "SAST Code Scan"
     needs: [code-hygiene]
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout Blueprint
+      - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Initialize CodeQL Analysis Engine
+      - name: Initialize CodeQL
         uses: github/codeql-action/init@v3
         with:
-          languages: 'python'
+          languages: "python"
 
-      - name: Perform Abstract Syntax Tree (AST) Flaw Scan
+      - name: Perform CodeQL analysis
         uses: github/codeql-action/analyze@v3
 
-  # 6. Security Analysis / Dependency & Secret Shield
+      - name: SAST summary
+        if: always()
+        run: |
+          {
+            echo "## SAST Summary"
+            echo ""
+            echo "- Engine: CodeQL"
+            echo "- Language: Python"
+          } >> "$GITHUB_STEP_SUMMARY"
+
   security-shield:
-    name: "Security Analysis / Dependency & Secret Shield"
+    name: "Security Analysis"
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout Blueprint
+      - name: Checkout repository
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
-      - name: Run Secret Scanning Guard
+      - name: Run secret scanning guard
         uses: trufflesecurity/trufflehog@main
         with:
           path: ./
@@ -144,28 +172,46 @@ jobs:
           head: HEAD
           extra_args: --only-verified
 
-  # 7. Ingestion Schema Validation / Verify Ride Data Contracts
+      - name: Security summary
+        if: always()
+        run: |
+          {
+            echo "## Security Summary"
+            echo ""
+            echo "- Secret scanner: TruffleHog"
+            echo "- Mode: verified findings only"
+          } >> "$GITHUB_STEP_SUMMARY"
+
   schema-validation:
-    name: "Ingestion Schema Validation / Verify Ride Data Contracts"
+    name: "Ingestion Schema Validation"
     needs: [code-hygiene]
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout Blueprint
+      - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Initialize Environment
+      - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: '3.11'
+          python-version: "3.11"
+          cache: pip
+          cache-dependency-path: |
+            requirements.txt
+            requirements-dev.txt
 
-      - name: Install Data Validation Tools
-        run: pip install pydantic openapi-spec-validator
-
-      - name: Verify Telemetry and Kafka Event Contracts
+      - name: Install validation tools
         run: |
-          echo "Validating event schemas against strict data production specifications..."
-          if [ -d "tests/schemas" ]; then
-            python -m unittest discover -s tests/schemas/ -p "test_contracts.py"
-          else
-            echo "Data validation contract tests not initiated yet. Passing schema shield step."
-          fi
+          python -m pip install --upgrade pip
+          python -m pip install -r requirements.txt -r requirements-dev.txt openapi-spec-validator
+
+      - name: Verify event schema imports
+        run: python -m compileall shared services
+
+      - name: Schema summary
+        if: always()
+        run: |
+          {
+            echo "## Schema Validation Summary"
+            echo ""
+            echo "- Scope: shared event schemas and service modules"
+          } >> "$GITHUB_STEP_SUMMARY"
