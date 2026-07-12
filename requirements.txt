@@ -1,4 +1,5 @@
 fastapi>=0.111,<1.0
+uvicorn>=0.30,<1.0
 pydantic>=2,<3
 pydantic-settings>=2,<3
 kafka-python>=2.0,<3.0
