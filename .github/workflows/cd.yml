@@ -4,6 +4,8 @@ on:
   workflow_dispatch:
   push:
     branches: ["main"]
+  pull_request:
+    branches: ["main"]
 
 permissions:
   contents: read
@@ -28,6 +30,13 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
+      - name: Normalize image name
+        id: image
+        shell: bash
+        run: |
+          image="ghcr.io/${GITHUB_REPOSITORY_OWNER,,}/ride-sharing-platform"
+          echo "name=${image}" >> "$GITHUB_OUTPUT"
+
       - name: Build and push API image
         uses: docker/build-push-action@v6
         with:
@@ -35,8 +44,8 @@ jobs:
           file: Dockerfile
           push: ${{ github.event_name != 'pull_request' }}
           tags: |
-            ghcr.io/${{ github.repository_owner }}/ride-sharing-platform:latest
-            ghcr.io/${{ github.repository_owner }}/ride-sharing-platform:${{ github.sha }}
+            ${{ steps.image.outputs.name }}:latest
+            ${{ steps.image.outputs.name }}:${{ github.sha }}
 
       - name: Deployment summary
         if: always()
@@ -44,6 +53,6 @@ jobs:
           {
             echo "## CD Summary"
             echo ""
-            echo "- Image: ghcr.io/${{ github.repository_owner }}/ride-sharing-platform"
+            echo "- Image: ${{ steps.image.outputs.name }}"
             echo "- Dockerfile: Dockerfile"
           } >> "$GITHUB_STEP_SUMMARY"
