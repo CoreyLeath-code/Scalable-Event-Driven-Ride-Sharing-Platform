@@ -1,5 +1,7 @@
-from kafka import KafkaConsumer
 import json
+
+from kafka import KafkaConsumer
+
 from shared.config import settings
 
 

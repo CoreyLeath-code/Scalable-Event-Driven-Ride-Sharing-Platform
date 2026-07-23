@@ -1,5 +1,3 @@
-from typing import Dict, List, Optional
-
 from models import DriverLocationEvent
 from utils import get_logger
 
@@ -22,7 +20,7 @@ class DriverLocationStore:
 
     def __init__(self):
         # driver_id → DriverLocationEvent
-        self.drivers: Dict[str, DriverLocationEvent] = {}
+        self.drivers: dict[str, DriverLocationEvent] = {}
 
     # ------------------------------------------------------------
     # Core Operations
@@ -47,13 +45,13 @@ class DriverLocationStore:
     # Retrieval
     # ------------------------------------------------------------
 
-    def get_all_drivers(self) -> List[DriverLocationEvent]:
+    def get_all_drivers(self) -> list[DriverLocationEvent]:
         """
         Return a list of all active drivers.
         """
         return list(self.drivers.values())
 
-    def get_driver(self, driver_id: str) -> Optional[DriverLocationEvent]:
+    def get_driver(self, driver_id: str) -> DriverLocationEvent | None:
         """
         Fetch a single driver by ID.
         """

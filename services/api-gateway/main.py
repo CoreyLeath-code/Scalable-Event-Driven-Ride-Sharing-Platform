@@ -1,9 +1,11 @@
-from fastapi import FastAPI
+from datetime import UTC, datetime
 from uuid import uuid4
-from datetime import datetime
-from shared.event_schema.ride_events import RideRequestedEvent
-from shared.event_bus.kafka_producer import publish_event
+
+from fastapi import FastAPI
+
 from shared.config import settings
+from shared.event_bus.kafka_producer import publish_event
+from shared.event_schema.ride_events import RideRequestedEvent
 from shared.logging_config import setup_logging
 
 app = FastAPI()
@@ -26,7 +28,7 @@ def request_ride(
         pickup_lng=pickup_lng,
         destination_lat=destination_lat,
         destination_lng=destination_lng,
-        timestamp=datetime.utcnow(),
+        timestamp=datetime.now(UTC),
     )
 
     publish_event(settings.KAFKA_TOPIC_RIDE_REQUESTED, ride_event.dict())

@@ -1,4 +1,3 @@
-from typing import List, Optional
 from math import sqrt
 
 from models import DriverLocationEvent, MatchResultEvent, TripRequestEvent
@@ -65,10 +64,10 @@ class MatchingEngine:
 
     def rank_drivers(
         self,
-        drivers: List[DriverLocationEvent],
+        drivers: list[DriverLocationEvent],
         trip: TripRequestEvent,
         surge_multiplier: float,
-    ) -> List[DriverLocationEvent]:
+    ) -> list[DriverLocationEvent]:
         """
         Sort drivers by score (descending).
         """
@@ -92,10 +91,10 @@ class MatchingEngine:
 
     def select_best_match(
         self,
-        drivers: List[DriverLocationEvent],
+        drivers: list[DriverLocationEvent],
         trip: TripRequestEvent,
         surge_multiplier: float,
-    ) -> Optional[MatchResultEvent]:
+    ) -> MatchResultEvent | None:
         """
         Selects the highest-ranked driver and returns a MatchResultEvent.
         """
