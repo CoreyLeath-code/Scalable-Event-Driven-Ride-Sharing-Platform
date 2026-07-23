@@ -1,5 +1,7 @@
 import json
+
 import aio_pika
+
 from .base import EventBus
 
 
