@@ -1,5 +1,7 @@
-from kafka import KafkaProducer
 import json
+
+from kafka import KafkaProducer
+
 from shared.config import settings
 
 producer = KafkaProducer(
