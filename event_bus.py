@@ -1,6 +1,7 @@
 import asyncio
 from collections import defaultdict
-from typing import Callable, Dict, List, Any
+from collections.abc import Callable
+from typing import Any
 
 from utils import get_logger
 
@@ -19,7 +20,7 @@ class EventBus:
 
     def __init__(self):
         # topic → list of subscriber callback functions
-        self.subscribers: Dict[str, List[Callable]] = defaultdict(list)
+        self.subscribers: dict[str, list[Callable]] = defaultdict(list)
         # lock to avoid race conditions when adding/removing subscribers
         self.lock = asyncio.Lock()
 
