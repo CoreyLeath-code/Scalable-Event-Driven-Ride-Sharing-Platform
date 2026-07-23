@@ -1,5 +1,3 @@
-from typing import Dict
-
 from models import DriverLocationEvent
 from utils import get_logger
 
@@ -30,14 +28,14 @@ class DriverLocationConsumer:
     # Handle Incoming Driver Location Updates
     # ------------------------------------------------------------
 
-    async def handle_driver_location(self, data: Dict):
+    async def handle_driver_location(self, data: dict):
         """
         Convert dictionary → Pydantic model → update store.
         """
 
         try:
             event = DriverLocationEvent(**data)
-        except Exception as e:
+        except (TypeError, ValueError) as e:
             self.logger.error(f"Invalid driver location event: {e}")
             return
 
