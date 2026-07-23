@@ -1,5 +1,7 @@
 import json
-from aiokafka import AIOKafkaProducer, AIOKafkaConsumer
+
+from aiokafka import AIOKafkaConsumer, AIOKafkaProducer
+
 from .base import EventBus
 
 
