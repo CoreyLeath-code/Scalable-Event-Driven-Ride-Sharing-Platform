@@ -1,4 +1,5 @@
 import psycopg2
+
 from shared.config import settings
 
 
