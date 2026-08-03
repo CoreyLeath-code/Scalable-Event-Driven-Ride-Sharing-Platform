@@ -187,7 +187,12 @@ For the containerized demo:
 
 ```bash
 docker compose up --build
+curl http://localhost:8000/driver-location/health
 ```
+
+The Compose profile starts the repository's root driver-location API and validates its
+health endpoint. Kafka and the additional service boundaries remain architectural extension
+points; they are not started by this local demo profile.
 
 ## Event Flow
 
