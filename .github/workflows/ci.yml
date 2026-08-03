@@ -31,6 +31,9 @@ jobs:
           python -m pip install --upgrade pip
           python -m pip install -r requirements.txt -r requirements-dev.txt
 
+      - name: Validate Compose demo configuration
+        run: docker compose -f docker-compose.yml config
+
       - name: Format check
         run: black --check . --line-length=100
 
