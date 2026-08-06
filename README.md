@@ -241,7 +241,7 @@ Known remaining gaps for a full production release:
 
 - Coverage is 54%; next priority is adding API router, consumer, broker adapter, and service integration tests.
 - `docker-compose.yml` still references service directories that are architectural placeholders.
-- Kafka, Redis, and RabbitMQ adapters have a Docker-backed integration suite; they are not claimed as validated until the dedicated CI round trips pass on the reviewed commit.
+- Kafka and RabbitMQ passed Docker-backed publish/consume round trips in CI; the Redis adapter is not validated because its `aioredis==2.0.1` import fails on Python 3.11 before a broker connection is made. See the broker-integration PR for the exact error and required decision.
 - Kubernetes manifests should be parameterized with real image names and deployment environments.
 - Authentication, authorization, secrets management, and PII controls need implementation before production use.
 # [![CI](https://github.com/CoreyLeath-code/Scalable-Event-Driven-Ride-Sharing-Platform/actions/workflows/ci.yml/badge.svg?branch=docs%2Fportfolio-readme-production-scalable-event-driven-ride-sharing-platform)](https://github.com/CoreyLeath-code/Scalable-Event-Driven-Ride-Sharing-Platform/actions/workflows/ci.yml) [![Hygiene](https://github.com/CoreyLeath-code/Scalable-Event-Driven-Ride-Sharing-Platform/actions/workflows/hygiene-matrix.yml/badge.svg?branch=docs%2Fportfolio-readme-production-scalable-event-driven-ride-sharing-platform)](https://github.com/CoreyLeath-code/Scalable-Event-Driven-Ride-Sharing-Platform/actions/workflows/hygiene-matrix.yml)
