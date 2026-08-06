@@ -1,3 +1,5 @@
+.PHONY: up down logs test install lock-dev sync-dev benchmark reproduce
+
 up:
 	docker-compose up --build
 
@@ -21,3 +23,6 @@ sync-dev:
 
 benchmark:
 	python benchmarks/ride_sharing_benchmarks.py --output benchmark-results.json
+
+reproduce:
+	python scripts/reproduce.py
