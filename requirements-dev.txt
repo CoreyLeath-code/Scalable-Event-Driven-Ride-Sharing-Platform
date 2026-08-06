@@ -12,7 +12,6 @@ pytest-asyncio
 # Broker integration testing (development/CI only)
 aiokafka>=0.11,<1.0
 aio-pika>=9,<10
-aioredis==2.0.1
 
 # Type-checking
 types-requests
