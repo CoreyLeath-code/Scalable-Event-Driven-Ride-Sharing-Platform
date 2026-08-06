@@ -110,8 +110,6 @@ def main() -> None:
     )
 
     paths = tracked_paths()
-    test_output = str(commands["tests"].get("command", ""))
-    del test_output
     benchmark = json.loads(BENCHMARK_ARTIFACT.read_text(encoding="utf-8"))
     results["engineering"] = {
         "tracked_repository_files": len(paths),
