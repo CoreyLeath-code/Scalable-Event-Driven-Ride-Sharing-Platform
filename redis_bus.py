@@ -1,6 +1,6 @@
 import json
 
-import aioredis
+import redis.asyncio as redis
 
 from .base import EventBus
 
@@ -16,7 +16,7 @@ class RedisEventBus(EventBus):
         self.redis = None
 
     async def connect(self):
-        self.redis = await aioredis.from_url(self.redis_url, decode_responses=True)
+        self.redis = redis.from_url(self.redis_url, decode_responses=True)
 
     async def publish(self, topic: str, message: dict):
         await self.redis.xadd(topic, {"data": json.dumps(message)})
@@ -34,4 +34,4 @@ class RedisEventBus(EventBus):
 
     async def close(self):
         if self.redis:
-            await self.redis.close()
+            await self.redis.aclose()
