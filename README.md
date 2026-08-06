@@ -97,40 +97,31 @@ Core components:
 
 ## Research Benchmarks and Recorded Metrics
 
-Benchmark environment:
+Benchmark evidence is generated from the reviewed checkout rather than copied into the README. Run `make reproduce` to regenerate the published benchmark and coverage artifacts.
 
-- Date recorded: 2026-07-12
-- Runtime: CPython 3.12.13 on Windows local workspace
-- Command: `python benchmarks/ride_sharing_benchmarks.py --iterations 500 --driver-count 100 --output benchmark-results.json`
-- Result artifact: `benchmark-results.json`
+The command writes `benchmark-results.json`, `coverage.xml`, and `reproducibility-results.json` in the repository root. The JSON artifact records the exact commands, tracked-file inventory, quality-check outcomes, line coverage, and the benchmark payload from that run.
 
 ### Measured Microbenchmarks
 
-| Area | Workload | Recorded Result | Research Interpretation |
-| --- | --- | ---: | --- |
-| Event bus publish | 500 in-memory `ride.requested` events | 0.023745 ms avg publish latency | Validates low-overhead async fanout for local simulation. |
-| Event delivery | 500 published events | 500 delivered messages | Confirms no message loss in the in-memory event bus harness. |
-| Matching engine | 500 matches over 100 candidate drivers | 0.074141 ms avg match latency | Candidate ranking remains sub-millisecond for small local pools. |
-| Matching selection | Deterministic synthetic pickup near driver 10 | `driver-10` selected | Confirms nearest-candidate behavior under controlled coordinates. |
-| Driver location store | 500 upserts | 0.00402 ms avg upsert latency | In-memory telemetry writes are suitable for unit-level simulation. |
-| Pricing engine | 500 surge calculations | 0.004456 ms avg compute latency | Demand/supply pricing calculation is effectively negligible locally. |
-| Surge output | Demand 50-59, supply 20 | Last multiplier 1.44x | Confirms high-demand zone pricing response. |
+| Area | Workload | Generated evidence |
+| --- | --- | --- |
+| Event bus publish and delivery | In-memory `ride.requested` events | `benchmark.event_bus` in `benchmark-results.json` |
+| Matching engine | Synthetic candidates and a deterministic pickup | `benchmark.matching` in `benchmark-results.json` |
+| Driver location store | In-memory telemetry upserts | `benchmark.location_store` in `benchmark-results.json` |
+| Pricing engine | Synthetic demand and supply inputs | `benchmark.pricing` in `benchmark-results.json` |
 
 ### Engineering Quality Metrics
 
-| Metric | Current Recorded Value | Source |
-| --- | ---: | --- |
-| Tracked repository files | 57 | Repository inventory |
-| Python files | 31 | Repository inventory |
-| Test files | 5 | `test_*.py` inventory |
-| Passing tests | 8 | `pytest -q --cov=. --cov-report=term-missing` |
-| Local coverage | 54% | Current focused core test suite |
-| GitHub Actions workflows | 3 | `.github/workflows` |
-| Infrastructure manifests | 4 | Docker, compose, Kubernetes |
-| Benchmark JSON validation | Passing | `python -m json.tool benchmark-results.json` |
-| Formatting | Passing | `black --check . --line-length 100` |
-| Linting | Passing | `ruff check .` |
-| Static typing scope | Passing on core modules | `mypy ... --ignore-missing-imports` |
+| Metric | Reproduced by | Artifact |
+| --- | --- | --- |
+| Tracked repository files | `git ls-files` inventory | `engineering.tracked_repository_files` in `reproducibility-results.json` |
+| Python files | `git ls-files` inventory | `engineering.python_files` in `reproducibility-results.json` |
+| Test files | `git ls-files` inventory | `engineering.test_files` in `reproducibility-results.json` |
+| Test and line coverage | `pytest --cov=.` | `coverage.xml` and `coverage.line_coverage_percent` |
+| GitHub Actions workflows | `.github/workflows/` inventory | `engineering.github_actions_workflows` |
+| Infrastructure manifests | Docker and Kubernetes inventory | `engineering.infrastructure_manifests` |
+| Formatting, linting, and typing | Black, Ruff, and mypy | `commands.format`, `commands.lint`, and `commands.type_check` |
+| Benchmark JSON validation | `python -m json.tool benchmark-results.json` | `commands.benchmark_json` |
 
 ### Architecture Target Metrics
 
@@ -152,12 +143,7 @@ The repository now has an explicit validation path:
 
 ```bash
 python -m pip install -r requirements.txt -r requirements-dev.txt
-black --check . --line-length 100
-ruff check .
-mypy models.py utils.py event_bus.py location_store.py matching_engine.py pricing_engine.py consumer.py --ignore-missing-imports
-pytest --cov=. --cov-report=term-missing
-python benchmarks/ride_sharing_benchmarks.py --iterations 500 --driver-count 100 --output benchmark-results.json
-python -m json.tool benchmark-results.json
+make reproduce
 ```
 
 GitHub Actions now:
