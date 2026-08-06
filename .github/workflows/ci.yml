@@ -70,3 +70,38 @@ jobs:
             echo "- Checks: black, ruff, mypy, pytest"
             echo "- Benchmark artifact: benchmark-results.json"
           } >> "$GITHUB_STEP_SUMMARY"
+
+
+  reproduce:
+    name: Reproduce README evidence
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+          cache-dependency-path: |
+            requirements.txt
+            requirements-dev.txt
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -r requirements.txt -r requirements-dev.txt
+
+      - name: Regenerate published evidence
+        run: make reproduce
+
+      - name: Upload reproducibility artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: ride-sharing-reproducibility-artifacts
+          path: |
+            benchmark-results.json
+            coverage.xml
+            reproducibility-results.json
