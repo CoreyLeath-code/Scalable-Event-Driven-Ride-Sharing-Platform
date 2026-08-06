@@ -24,7 +24,7 @@ class RedisEventBus(EventBus):
     async def subscribe(self, topic: str, handler):
         last_id = "$"
         while True:
-            streams = await self.redis.xread({topic: last_id}, timeout=5000)
+            streams = await self.redis.xread({topic: last_id}, block=5000)
             if streams:
                 _, messages = streams[0]
                 for msg_id, fields in messages:
