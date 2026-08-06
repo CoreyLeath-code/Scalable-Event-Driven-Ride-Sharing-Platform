@@ -5,7 +5,10 @@ line-length = 100
 pythonpath = ["."]
 testpaths = [".", "tests"]
 python_files = ["test_*.py"]
-addopts = "-ra"
+addopts = "-ra -m 'not integration'"
+markers = [
+    "integration: requires Docker-hosted Kafka, Redis, and RabbitMQ services",
+]
 
 [tool.coverage.run]
 source = ["."]

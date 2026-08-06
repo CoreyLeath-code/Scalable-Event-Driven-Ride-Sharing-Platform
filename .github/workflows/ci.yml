@@ -72,8 +72,8 @@ jobs:
           } >> "$GITHUB_STEP_SUMMARY"
 
 
-  reproduce:
-    name: Reproduce README evidence
+  broker-integration:
+    name: Broker adapter integration
     runs-on: ubuntu-latest
 
     steps:
@@ -94,14 +94,15 @@ jobs:
           python -m pip install --upgrade pip
           python -m pip install -r requirements.txt -r requirements-dev.txt
 
-      - name: Regenerate published evidence
-        run: make reproduce
+      - name: Start Kafka, Redis, and RabbitMQ
+        run: docker compose -f tests/integration/docker-compose.yml up --detach
 
-      - name: Upload reproducibility artifacts
-        uses: actions/upload-artifact@v4
-        with:
-          name: ride-sharing-reproducibility-artifacts
-          path: |
-            benchmark-results.json
-            coverage.xml
-            reproducibility-results.json
+      - name: Allow broker startup
+        run: sleep 45
+
+      - name: Run broker integration tests
+        run: pytest -m integration
+
+      - name: Stop broker services
+        if: always()
+        run: docker compose -f tests/integration/docker-compose.yml down --volumes

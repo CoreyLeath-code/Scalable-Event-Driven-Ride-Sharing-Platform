@@ -9,6 +9,10 @@ pytest
 pytest-cov
 pytest-asyncio
 
+# Broker integration testing (development/CI only)
+aiokafka>=0.11,<1.0
+aio-pika>=9,<10
+
 # Type-checking
 types-requests
 
