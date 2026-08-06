@@ -102,7 +102,7 @@ jobs:
           for attempt in {1..45}; do
             if docker compose -f tests/integration/docker-compose.yml exec -T redis redis-cli ping | grep -q PONG && \
               docker compose -f tests/integration/docker-compose.yml exec -T rabbitmq rabbitmq-diagnostics -q ping && \
-              docker compose -f tests/integration/docker-compose.yml exec -T kafka kafka-topics --bootstrap-server kafka:29092 --list; then
+              docker compose -f tests/integration/docker-compose.yml exec -T kafka kafka-topics --bootstrap-server localhost:9092 --list; then
               exit 0
             fi
             sleep 2
