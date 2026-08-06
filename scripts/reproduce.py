@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import json
-import re
 import subprocess
 import sys
 import xml.etree.ElementTree as ET
@@ -114,7 +113,9 @@ def main() -> None:
     results["engineering"] = {
         "tracked_repository_files": len(paths),
         "python_files": sum(path.endswith(".py") for path in paths),
-        "test_files": sum(Path(path).name.startswith("test_") and path.endswith(".py") for path in paths),
+        "test_files": sum(
+            Path(path).name.startswith("test_") and path.endswith(".py") for path in paths
+        ),
         "github_actions_workflows": sum(path.startswith(".github/workflows/") for path in paths),
         "infrastructure_manifests": sum(
             path == "Dockerfile"
