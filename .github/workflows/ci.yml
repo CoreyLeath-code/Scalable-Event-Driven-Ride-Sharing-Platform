@@ -97,18 +97,8 @@ jobs:
       - name: Start Kafka, Redis, and RabbitMQ
         run: docker compose -f tests/integration/docker-compose.yml up --detach
 
-      - name: Wait for broker readiness
-        run: |
-          for attempt in {1..45}; do
-            if docker compose -f tests/integration/docker-compose.yml exec -T redis redis-cli ping | grep -q PONG && \
-              docker compose -f tests/integration/docker-compose.yml exec -T rabbitmq rabbitmq-diagnostics -q ping && \
-              docker compose -f tests/integration/docker-compose.yml exec -T kafka bash -c 'echo > /dev/tcp/localhost/9092'; then
-              exit 0
-            fi
-            sleep 2
-          done
-          docker compose -f tests/integration/docker-compose.yml logs
-          exit 1
+      - name: Allow broker startup
+        run: sleep 30
 
       - name: Run broker integration tests
         run: pytest -m integration
