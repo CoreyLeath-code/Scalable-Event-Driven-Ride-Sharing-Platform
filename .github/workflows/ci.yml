@@ -70,3 +70,49 @@ jobs:
             echo "- Checks: black, ruff, mypy, pytest"
             echo "- Benchmark artifact: benchmark-results.json"
           } >> "$GITHUB_STEP_SUMMARY"
+
+
+  broker-integration:
+    name: Broker adapter integration
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+          cache-dependency-path: |
+            requirements.txt
+            requirements-dev.txt
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -r requirements.txt -r requirements-dev.txt
+
+      - name: Start Kafka, Redis, and RabbitMQ
+        run: docker compose -f tests/integration/docker-compose.yml up --detach
+
+      - name: Wait for broker readiness
+        run: |
+          for attempt in {1..45}; do
+            if docker compose -f tests/integration/docker-compose.yml exec -T redis redis-cli ping | grep -q PONG && \
+              docker compose -f tests/integration/docker-compose.yml exec -T rabbitmq rabbitmq-diagnostics -q ping && \
+              docker compose -f tests/integration/docker-compose.yml exec -T kafka kafka-topics --bootstrap-server kafka:29092 --list; then
+              exit 0
+            fi
+            sleep 2
+          done
+          docker compose -f tests/integration/docker-compose.yml logs
+          exit 1
+
+      - name: Run broker integration tests
+        run: pytest -m integration
+
+      - name: Stop broker services
+        if: always()
+        run: docker compose -f tests/integration/docker-compose.yml down --volumes
