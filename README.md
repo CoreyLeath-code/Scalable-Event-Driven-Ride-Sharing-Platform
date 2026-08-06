@@ -18,13 +18,9 @@ local benchmarks are recorded separately from target architecture goals so the R
 useful for engineering review, not just system-design storytelling.
 
 
-## Production Readiness Guide
+This repository models an event-driven ride-request flow with local matching, pricing, location-store, benchmark, and deployment-reference components. It does not run a complete live ride-sharing service with production brokers, payments, identity, or real driver/rider data. Production deployment would require integrated broker and datastore environments, authentication and PII controls, real image/service configuration, end-to-end reliability testing, and operational ownership.
 
-> This section is the portfolio audit entry point for **Scalable-Event-Driven-Ride-Sharing-Platform**. It describes an engineering promotion path; it is not a claim that the repository is already production-authorized.
-
-[![CI](https://img.shields.io/github/actions/workflow/status/CoreyLeath-code/Scalable-Event-Driven-Ride-Sharing-Platform/ci.yml?branch=main&label=CI)](https://github.com/CoreyLeath-code/Scalable-Event-Driven-Ride-Sharing-Platform/actions) [![License](https://img.shields.io/github/license/CoreyLeath-code/Scalable-Event-Driven-Ride-Sharing-Platform)](https://github.com/CoreyLeath-code/Scalable-Event-Driven-Ride-Sharing-Platform/blob/main/LICENSE)
-
-### Architecture flowchart
+## Architecture flowchart
 
 ```mermaid
 flowchart LR
