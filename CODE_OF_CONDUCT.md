@@ -1,10 +1,10 @@
-
+<!--
+Historical source wrapper retained from the malformed root file:
 ---
-
-## 4. `CODE_OF_CONDUCT.md`  
+## 4. `CODE_OF_CONDUCT.md`
 Sets a professional, welcoming tone—standard for open-source:
+-->
 
-```markdown
 # Contributor Covenant Code of Conduct
 
 ## Our Pledge

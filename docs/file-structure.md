@@ -1,3 +1,8 @@
+# Historical file structure
+
+This file was relocated from the repository root during root-directory hygiene. It is a manually maintained reference, not a generated inventory.
+
+```text
 ride-sharing-platform/
 │
 ├── services/
@@ -26,3 +31,4 @@ ride-sharing-platform/
 ├── scripts/
 ├── docs/
 └── README.md
+```
