@@ -1,20 +1,52 @@
 services:
+  redis:
+    image: redis:7.4-alpine
+    restart: unless-stopped
+    command: ["redis-server", "--appendonly", "yes"]
+    volumes:
+      - driver-location-redis:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+
   driver-location-api:
     build:
       context: .
-    ports:
-      - "8000:8000"
+    restart: unless-stopped
+    expose:
+      - "8000"
     environment:
       PYTHONUNBUFFERED: "1"
+      DRIVER_LOCATION_REDIS_URL: redis://redis:6379/0
+      EXPOSE_INSTANCE_ID: ${EXPOSE_INSTANCE_ID:-false}
+    depends_on:
+      redis:
+        condition: service_healthy
     healthcheck:
       test:
         [
           "CMD",
           "python",
           "-c",
-          "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/driver-location/health', timeout=3)",
+          "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/driver-location/ready', timeout=3)",
         ]
       interval: 15s
       timeout: 5s
       retries: 3
       start_period: 10s
+
+  api-gateway:
+    image: nginx:1.27.5-alpine
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./nginx/driver-location-load-balancer.conf:/etc/nginx/nginx.conf:ro
+    depends_on:
+      driver-location-api:
+        condition: service_healthy
+
+volumes:
+  driver-location-redis:
