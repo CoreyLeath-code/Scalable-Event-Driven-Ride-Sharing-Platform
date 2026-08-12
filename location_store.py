@@ -44,9 +44,12 @@ class RedisDriverLocationStore:
     redis_key = "driver-locations"
 
     def __init__(self, redis_url: str | None = None, client=None):
-        if client is None and not redis_url:
+        if client is not None:
+            self.client = client
+        elif redis_url is not None:
+            self.client = redis.Redis.from_url(redis_url, decode_responses=True)
+        else:
             raise ValueError("redis_url is required when no Redis client is provided")
-        self.client = client or redis.Redis.from_url(redis_url, decode_responses=True)
 
     def upsert_driver(self, event: DriverLocationEvent) -> None:
         self.client.hset(self.redis_key, event.driver_id, event.model_dump_json())
