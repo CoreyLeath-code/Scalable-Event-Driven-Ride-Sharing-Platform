@@ -1,10 +1,13 @@
+import os
+import socket
+
 from fastapi import FastAPI
 
 import api_router
 from api_router import router
 from consumer import DriverLocationConsumer
 from event_bus import EventBus
-from location_store import DriverLocationStore
+from location_store import create_driver_store
 from utils import get_logger
 
 # ------------------------------------------------------------
@@ -14,13 +17,22 @@ from utils import get_logger
 logger = get_logger("DriverLocationMain")
 
 event_bus = EventBus()
-driver_store = DriverLocationStore()
+driver_store = create_driver_store(os.getenv("DRIVER_LOCATION_REDIS_URL"))
 
 app = FastAPI(
     title="Driver Location Service",
     description="Real-time driver location ingestion service for the ride-sharing platform.",
     version="1.0.0",
 )
+
+
+@app.middleware("http")
+async def optional_instance_id_header(request, call_next):
+    """Expose a container identity only when Compose smoke tests request it."""
+    response = await call_next(request)
+    if os.getenv("EXPOSE_INSTANCE_ID") == "true":
+        response.headers["X-Instance-ID"] = os.getenv("INSTANCE_ID", socket.gethostname())
+    return response
 
 
 # ------------------------------------------------------------
