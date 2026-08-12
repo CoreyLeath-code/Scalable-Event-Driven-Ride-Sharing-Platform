@@ -49,7 +49,22 @@ async def get_driver_count():
 
 @router.get("/health")
 async def health_check():
-    """
-    Returns service health.
-    """
+    """Liveness probe: the API process can serve requests."""
+    return {"status": "OK", "service": "driver-location-service"}
+
+
+@router.get("/ready")
+async def readiness_check():
+    """Readiness probe: the configured driver-location store is reachable."""
+    if DRIVER_STORE is None:
+        raise HTTPException(503, "Driver store not initialized.")
+
+    try:
+        ready = DRIVER_STORE.is_ready()
+    except Exception as exc:
+        logger.error("Driver store readiness check failed: %s", exc)
+        raise HTTPException(503, "Driver store is unavailable.") from exc
+
+    if not ready:
+        raise HTTPException(503, "Driver store is unavailable.")
     return {"status": "OK", "service": "driver-location-service"}

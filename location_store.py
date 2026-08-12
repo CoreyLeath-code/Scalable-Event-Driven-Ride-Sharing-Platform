@@ -1,3 +1,5 @@
+import redis
+
 from models import DriverLocationEvent
 from utils import get_logger
 
@@ -5,71 +7,81 @@ logger = get_logger("DriverLocationStore")
 
 
 class DriverLocationStore:
-    """
-    In-memory real-time driver store.
-
-    Responsibilities:
-    - Maintain driver availability
-    - Update driver coordinates
-    - Remove offline drivers
-    - Provide list of active drivers for Dispatch Service
-
-    This version is intentionally simple, but the interface allows
-    easy migration to Redis, MongoDB, or a geospatial index (H3).
-    """
+    """In-memory driver store for single-process local development."""
 
     def __init__(self):
-        # driver_id → DriverLocationEvent
         self.drivers: dict[str, DriverLocationEvent] = {}
 
-    # ------------------------------------------------------------
-    # Core Operations
-    # ------------------------------------------------------------
-
     def upsert_driver(self, event: DriverLocationEvent) -> None:
-        """
-        Add or update driver in the store.
-        """
         self.drivers[event.driver_id] = event
         logger.info(f"Updated driver {event.driver_id} at ({event.lat}, {event.lon})")
 
     def remove_driver(self, driver_id: str) -> None:
-        """
-        Remove a driver from the store.
-        """
         if driver_id in self.drivers:
             del self.drivers[driver_id]
             logger.info(f"Removed driver {driver_id}")
 
-    # ------------------------------------------------------------
-    # Retrieval
-    # ------------------------------------------------------------
-
     def get_all_drivers(self) -> list[DriverLocationEvent]:
-        """
-        Return a list of all active drivers.
-        """
         return list(self.drivers.values())
 
     def get_driver(self, driver_id: str) -> DriverLocationEvent | None:
-        """
-        Fetch a single driver by ID.
-        """
         return self.drivers.get(driver_id)
 
-    # ------------------------------------------------------------
-    # Debug Utilities
-    # ------------------------------------------------------------
-
     def count(self) -> int:
-        """
-        Count active drivers.
-        """
         return len(self.drivers)
 
     def clear(self) -> None:
-        """
-        Remove all drivers (reset state).
-        """
         self.drivers.clear()
         logger.warning("Cleared all driver locations.")
+
+    def is_ready(self) -> bool:
+        return True
+
+
+class RedisDriverLocationStore:
+    """Redis-backed driver store for horizontally scaled API replicas."""
+
+    redis_key = "driver-locations"
+
+    def __init__(self, redis_url: str | None = None, client=None):
+        if client is not None:
+            self.client = client
+        elif redis_url is not None:
+            self.client = redis.Redis.from_url(redis_url, decode_responses=True)
+        else:
+            raise ValueError("redis_url is required when no Redis client is provided")
+
+    def upsert_driver(self, event: DriverLocationEvent) -> None:
+        self.client.hset(self.redis_key, event.driver_id, event.model_dump_json())
+        logger.info(f"Updated driver {event.driver_id} in Redis")
+
+    def remove_driver(self, driver_id: str) -> None:
+        self.client.hdel(self.redis_key, driver_id)
+
+    def get_all_drivers(self) -> list[DriverLocationEvent]:
+        return [
+            DriverLocationEvent.model_validate_json(serialized)
+            for serialized in self.client.hvals(self.redis_key)
+        ]
+
+    def get_driver(self, driver_id: str) -> DriverLocationEvent | None:
+        serialized = self.client.hget(self.redis_key, driver_id)
+        if serialized is None:
+            return None
+        return DriverLocationEvent.model_validate_json(serialized)
+
+    def count(self) -> int:
+        return self.client.hlen(self.redis_key)
+
+    def clear(self) -> None:
+        self.client.delete(self.redis_key)
+
+    def is_ready(self) -> bool:
+        return bool(self.client.ping())
+
+
+def create_driver_store(redis_url: str | None = None):
+    """Return a shared Redis store only when an explicit endpoint is configured."""
+    if redis_url:
+        return RedisDriverLocationStore(redis_url)
+    return DriverLocationStore()
