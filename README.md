@@ -176,6 +176,10 @@ The Compose profile starts the repository's root driver-location API and validat
 health endpoint. Kafka and the additional service boundaries remain architectural extension
 points; they are not started by this local demo profile.
 
+## Load-balanced driver-location API
+
+The public Compose endpoint at port `8000` is NGINX; it forwards to internal `driver-location-api` replicas using least-connections routing. `/driver-location/health` is a liveness probe, while `/driver-location/ready` verifies the configured Redis-backed driver store. The CI integration job validates the NGINX configuration, replica routing, shared-state read, and continued readiness after one replica stops; `EXPOSE_INSTANCE_ID=true` is limited to that test and is disabled by default.
+
 ## Event Flow
 
 ```text
