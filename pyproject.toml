@@ -1,3 +1,52 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "event-driven-ride-sharing-platform"
+version = "1.1.0"
+description = "Reference components for an event-driven ride-request platform."
+readme = "README.md"
+requires-python = ">=3.10"
+license = { file = "LICENSE" }
+authors = [{ name = "CoreyLeath-code" }]
+dependencies = [
+    "fastapi>=0.111,<1.0",
+    "uvicorn>=0.30,<1.0",
+    "pydantic>=2,<3",
+    "pydantic-settings>=2,<3",
+    "kafka-python>=2.0,<3.0",
+    "python-json-logger>=2,<4",
+    "redis>=5,<6",
+    "prometheus-client>=0.20,<1.0",
+]
+
+[project.urls]
+Homepage = "https://github.com/CoreyLeath-code/Scalable-Event-Driven-Ride-Sharing-Platform"
+Repository = "https://github.com/CoreyLeath-code/Scalable-Event-Driven-Ride-Sharing-Platform"
+Changelog = "https://github.com/CoreyLeath-code/Scalable-Event-Driven-Ride-Sharing-Platform/blob/main/CHANGELOG.md"
+
+[tool.setuptools]
+py-modules = [
+    "api_router",
+    "consumer",
+    "event_bus",
+    "kafka_bus",
+    "location_store",
+    "main",
+    "matching_engine",
+    "models",
+    "pricing_engine",
+    "producer",
+    "rabbitmq_bus",
+    "redis_bus",
+    "utils",
+]
+
+[tool.setuptools.packages.find]
+include = ["shared*"]
+namespaces = true
+
 [tool.black]
 line-length = 100
 
