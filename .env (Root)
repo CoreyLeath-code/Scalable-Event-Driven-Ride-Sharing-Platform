@@ -1,4 +1,0 @@
-KAFKA_BOOTSTRAP_SERVERS=kafka:9092
-DATABASE_URL=postgresql://postgres:postgres@postgres:5432/rides
-REDIS_HOST=redis
-REDIS_PORT=6379
