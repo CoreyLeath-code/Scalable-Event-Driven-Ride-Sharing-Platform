@@ -38,7 +38,9 @@ def _extract_event(body: str) -> dict[str, Any]:
     return payload
 
 
-def lambda_handler(event: dict[str, Any], _context: Any, *, sns_client: Any = None) -> dict[str, Any]:
+def lambda_handler(
+    event: dict[str, Any], _context: Any, *, sns_client: Any = None
+) -> dict[str, Any]:
     """Process an SQS batch and report per-message failures for safe retries."""
     topic_arn = os.environ.get("NOTIFICATION_TOPIC_ARN")
     if not topic_arn:
