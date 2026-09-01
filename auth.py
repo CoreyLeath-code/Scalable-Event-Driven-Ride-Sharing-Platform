@@ -68,7 +68,7 @@ def verify_bearer_token(token: str) -> dict[str, Any]:
 
 
 async def require_authenticated_request(
-    credentials: HTTPAuthorizationCredentials | None = Depends(_bearer),
+    credentials: HTTPAuthorizationCredentials | None = Depends(_bearer),  # noqa: B008
 ) -> dict[str, Any] | None:
     """Require a valid bearer token only when AUTH_REQUIRED is enabled."""
     if not auth_required():
