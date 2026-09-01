@@ -54,7 +54,9 @@ def _default_sqs_client():
     return boto3.client("sqs")
 
 
-def lambda_handler(event: dict[str, Any], _context: Any, *, sqs_client: Any = None) -> dict[str, int]:
+def lambda_handler(
+    event: dict[str, Any], _context: Any, *, sqs_client: Any = None
+) -> dict[str, int]:
     """Forward an MSK Lambda batch to the configured SQS queue.
 
     The function intentionally fails the invocation on malformed input or an SQS send
