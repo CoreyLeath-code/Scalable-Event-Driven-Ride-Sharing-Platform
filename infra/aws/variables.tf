@@ -11,10 +11,45 @@ variable "name_prefix" {
 }
 
 variable "msk_cluster_arn" {
-  description = "Optional Amazon MSK cluster ARN. When null, the MSK event source mapping is not created."
+  description = "Optional existing Amazon MSK cluster ARN. When null, Terraform can optionally create a development MSK Serverless cluster."
   type        = string
   default     = null
   nullable    = true
+}
+
+variable "create_dev_msk_cluster" {
+  description = "Create a private IAM-authenticated MSK Serverless cluster for development integration measurements. Disabled by default because it incurs AWS cost."
+  type        = bool
+  default     = false
+}
+
+variable "dev_msk_vpc_id" {
+  description = "VPC ID used by the optional development MSK Serverless cluster."
+  type        = string
+  default     = null
+  nullable    = true
+
+  validation {
+    condition     = !var.create_dev_msk_cluster || var.dev_msk_vpc_id != null
+    error_message = "dev_msk_vpc_id is required when create_dev_msk_cluster=true."
+  }
+}
+
+variable "dev_msk_subnet_ids" {
+  description = "Private subnet IDs used by the optional development MSK Serverless cluster."
+  type        = list(string)
+  default     = []
+
+  validation {
+    condition     = !var.create_dev_msk_cluster || length(var.dev_msk_subnet_ids) >= 2
+    error_message = "At least two private subnet IDs are required when create_dev_msk_cluster=true."
+  }
+}
+
+variable "enable_integration_probe" {
+  description = "Create an SNS-subscribed SQS probe queue for real end-to-end MSK integration measurements."
+  type        = bool
+  default     = false
 }
 
 variable "ride_events_topic" {
@@ -84,4 +119,17 @@ variable "sqs_oldest_message_age_seconds" {
     condition     = var.sqs_oldest_message_age_seconds >= 60
     error_message = "sqs_oldest_message_age_seconds must be at least 60 seconds."
   }
+}
+
+variable "create_runtime_secret" {
+  description = "Create KMS-protected Secrets Manager secret metadata and a least-privilege reader policy. Secret values are never stored in Terraform."
+  type        = bool
+  default     = false
+}
+
+variable "runtime_secret_name" {
+  description = "Optional Secrets Manager name for application runtime configuration."
+  type        = string
+  default     = null
+  nullable    = true
 }

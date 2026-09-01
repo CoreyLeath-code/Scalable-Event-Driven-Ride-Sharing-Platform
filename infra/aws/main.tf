@@ -1,13 +1,14 @@
 locals {
-  processor_function_name    = "${var.name_prefix}-ride-event-processor"
-  notification_function_name = "${var.name_prefix}-notification-worker"
-  msk_topic_arn = var.msk_cluster_arn == null ? null : "${replace(
-    var.msk_cluster_arn,
+  processor_function_name     = "${var.name_prefix}-ride-event-processor"
+  notification_function_name  = "${var.name_prefix}-notification-worker"
+  effective_msk_cluster_arn   = var.msk_cluster_arn != null ? var.msk_cluster_arn : try(aws_msk_serverless_cluster.dev[0].arn, null)
+  msk_topic_arn = local.effective_msk_cluster_arn == null ? null : "${replace(
+    local.effective_msk_cluster_arn,
     ":cluster/",
     ":topic/"
   )}/${var.ride_events_topic}"
-  msk_group_arn = var.msk_cluster_arn == null ? null : "${replace(
-    var.msk_cluster_arn,
+  msk_group_arn = local.effective_msk_cluster_arn == null ? null : "${replace(
+    local.effective_msk_cluster_arn,
     ":cluster/",
     ":group/"
   )}/${var.consumer_group_id}"
@@ -84,7 +85,7 @@ data "aws_iam_policy_document" "processor_permissions" {
   }
 
   dynamic "statement" {
-    for_each = var.msk_cluster_arn == null ? [] : [var.msk_cluster_arn]
+    for_each = local.effective_msk_cluster_arn == null ? [] : [local.effective_msk_cluster_arn]
 
     content {
       sid = "DiscoverMskCluster"
@@ -98,7 +99,7 @@ data "aws_iam_policy_document" "processor_permissions" {
   }
 
   dynamic "statement" {
-    for_each = var.msk_cluster_arn == null ? [] : [var.msk_cluster_arn]
+    for_each = local.effective_msk_cluster_arn == null ? [] : [local.effective_msk_cluster_arn]
 
     content {
       sid       = "ConnectToMskCluster"
@@ -134,7 +135,7 @@ data "aws_iam_policy_document" "processor_permissions" {
   }
 
   dynamic "statement" {
-    for_each = var.msk_cluster_arn == null ? [] : [1]
+    for_each = local.effective_msk_cluster_arn == null ? [] : [1]
 
     content {
       sid = "ManageMskNetworkInterfaces"
@@ -250,9 +251,9 @@ resource "aws_lambda_event_source_mapping" "processed_events" {
 }
 
 resource "aws_lambda_event_source_mapping" "ride_events_msk" {
-  count = var.msk_cluster_arn == null ? 0 : 1
+  count = local.effective_msk_cluster_arn == null ? 0 : 1
 
-  event_source_arn                   = var.msk_cluster_arn
+  event_source_arn                   = local.effective_msk_cluster_arn
   function_name                      = aws_lambda_function.ride_event_processor.arn
   topics                             = [var.ride_events_topic]
   starting_position                  = "LATEST"
