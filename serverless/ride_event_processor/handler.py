@@ -6,6 +6,11 @@ import logging
 import os
 from typing import Any
 
+try:
+    from .pii_policy import assert_no_direct_pii
+except ImportError:  # Lambda ZIP imports handler as a top-level module.
+    from pii_policy import assert_no_direct_pii
+
 LOGGER = logging.getLogger(__name__)
 LOGGER.setLevel(logging.INFO)
 
@@ -29,6 +34,7 @@ def _decode_record(record: dict[str, Any]) -> dict[str, Any]:
     if not isinstance(event_type, str) or not event_type.strip():
         raise ValueError("MSK event payload requires event_type or type")
 
+    assert_no_direct_pii(payload)
     return payload
 
 
@@ -49,7 +55,7 @@ def _build_envelope(record: dict[str, Any], payload: dict[str, Any]) -> dict[str
 
 
 def _default_sqs_client():
-    import boto3  # type: ignore[import-not-found]
+    import boto3
 
     return boto3.client("sqs")
 
@@ -57,12 +63,7 @@ def _default_sqs_client():
 def lambda_handler(
     event: dict[str, Any], _context: Any, *, sqs_client: Any = None
 ) -> dict[str, int]:
-    """Forward an MSK Lambda batch to the configured SQS queue.
-
-    The function intentionally fails the invocation on malformed input or an SQS send
-    failure. Amazon MSK/Lambda can then retry the batch. Consumers must therefore use the
-    emitted idempotency_key because delivery is at-least-once.
-    """
+    """Forward an MSK Lambda batch to the configured SQS queue."""
     queue_url = os.environ.get("PROCESSED_EVENTS_QUEUE_URL")
     if not queue_url:
         raise RuntimeError("PROCESSED_EVENTS_QUEUE_URL is required")

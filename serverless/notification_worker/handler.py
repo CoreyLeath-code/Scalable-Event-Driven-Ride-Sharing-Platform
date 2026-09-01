@@ -5,6 +5,11 @@ import logging
 import os
 from typing import Any
 
+try:
+    from .pii_policy import assert_no_direct_pii
+except ImportError:  # Lambda ZIP imports handler as a top-level module.
+    from pii_policy import assert_no_direct_pii
+
 LOGGER = logging.getLogger(__name__)
 LOGGER.setLevel(logging.INFO)
 
@@ -17,7 +22,7 @@ NOTIFIABLE_EVENTS = {
 
 
 def _default_sns_client():
-    import boto3  # type: ignore[import-not-found]
+    import boto3
 
     return boto3.client("sns")
 
@@ -35,6 +40,7 @@ def _extract_event(body: str) -> dict[str, Any]:
     if not isinstance(payload, dict):
         raise TypeError("Notification payload must be a JSON object")
 
+    assert_no_direct_pii(payload)
     return payload
 
 
