@@ -30,9 +30,7 @@ def test_cost_estimate_uses_explicit_pricing_inputs():
 
 
 def test_unwrap_sns_sqs_body_returns_original_notification_payload():
-    body = json.dumps(
-        {"Message": json.dumps({"event_type": "trip.completed", "probe_id": "p1"})}
-    )
+    body = json.dumps({"Message": json.dumps({"event_type": "trip.completed", "probe_id": "p1"})})
     assert unwrap_sns_sqs_body(body)["probe_id"] == "p1"
 
 
