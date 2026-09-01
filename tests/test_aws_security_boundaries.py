@@ -30,9 +30,14 @@ def msk_event(payload):
     return {
         "records": {
             "ride.events-0": [
-                {"topic": "ride.events", "partition": 0, "offset": 1, "value": value}
-            ]
-        }
+                {
+                    "topic": "ride.events",
+                    "partition": 0,
+                    "offset": 1,
+                    "value": value,
+                },
+            ],
+        },
     }
 
 
@@ -51,9 +56,7 @@ def test_msk_processor_rejects_direct_pii(monkeypatch):
 def test_notification_worker_returns_partial_failure_for_direct_pii(monkeypatch):
     monkeypatch.setenv("NOTIFICATION_TOPIC_ARN", "arn:aws:sns:us-east-1:123:topic")
     sns = RecordingSns()
-    body = json.dumps(
-        {"event": {"event_type": "trip.completed", "phone_number": "+15555550100"}}
-    )
+    body = json.dumps({"event": {"event_type": "trip.completed", "phone_number": "+15555550100"}})
     result = notification_handler.lambda_handler(
         {"Records": [{"messageId": "bad-pii", "body": body}]},
         None,

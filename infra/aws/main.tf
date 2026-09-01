@@ -1,7 +1,10 @@
 locals {
-  processor_function_name     = "${var.name_prefix}-ride-event-processor"
-  notification_function_name  = "${var.name_prefix}-notification-worker"
-  effective_msk_cluster_arn   = var.msk_cluster_arn != null ? var.msk_cluster_arn : try(aws_msk_serverless_cluster.dev[0].arn, null)
+  effective_msk_cluster_arn = var.msk_cluster_arn != null ? var.msk_cluster_arn : try(aws_msk_serverless_cluster.dev[0].arn, null)
+}
+
+locals {
+  processor_function_name    = "${var.name_prefix}-ride-event-processor"
+  notification_function_name = "${var.name_prefix}-notification-worker"
   msk_topic_arn = local.effective_msk_cluster_arn == null ? null : "${replace(
     local.effective_msk_cluster_arn,
     ":cluster/",
