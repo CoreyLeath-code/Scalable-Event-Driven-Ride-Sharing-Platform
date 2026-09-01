@@ -2,18 +2,54 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: api-gateway
+  labels:
+    app.kubernetes.io/name: api-gateway
+    app.kubernetes.io/part-of: ride-sharing-platform
 spec:
   replicas: 2
+  revisionHistoryLimit: 10
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 0
+      maxSurge: 1
   selector:
     matchLabels:
-      app: api-gateway
+      app.kubernetes.io/name: api-gateway
   template:
     metadata:
       labels:
-        app: api-gateway
+        app.kubernetes.io/name: api-gateway
+        app.kubernetes.io/part-of: ride-sharing-platform
     spec:
       containers:
         - name: api-gateway
-          image: yourdockerhub/api-gateway:latest
+          image: api-gateway:local
+          imagePullPolicy: IfNotPresent
+          envFrom:
+            - configMapRef:
+                name: ride-sharing-runtime
           ports:
-            - containerPort: 8000
+            - name: http
+              containerPort: 8000
+          readinessProbe:
+            httpGet:
+              path: /driver-location/ready
+              port: http
+            initialDelaySeconds: 5
+            periodSeconds: 10
+            timeoutSeconds: 3
+          livenessProbe:
+            httpGet:
+              path: /driver-location/health
+              port: http
+            initialDelaySeconds: 10
+            periodSeconds: 20
+            timeoutSeconds: 3
+          resources:
+            requests:
+              cpu: 100m
+              memory: 128Mi
+            limits:
+              cpu: 500m
+              memory: 512Mi

@@ -1,0 +1,50 @@
+name: Kubernetes Manifest Validation
+
+on:
+  pull_request:
+    paths:
+      - "infra/kubernetes/**"
+      - "scripts/k8s_release_evidence.py"
+      - "tests/test_kubernetes_manifests.py"
+      - "tests/test_release_evidence_tools.py"
+      - ".github/workflows/kubernetes-*.yml"
+  push:
+    branches: ["main"]
+    paths:
+      - "infra/kubernetes/**"
+      - "scripts/k8s_release_evidence.py"
+      - "tests/test_kubernetes_manifests.py"
+      - "tests/test_release_evidence_tools.py"
+      - ".github/workflows/kubernetes-*.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Kustomize
+        uses: imranismail/setup-kustomize@v2
+
+      - name: Render all environment overlays
+        run: |
+          set -euo pipefail
+          for environment in dev staging prod; do
+            kustomize build "infra/kubernetes/overlays/${environment}" > "/tmp/${environment}.yaml"
+            test -s "/tmp/${environment}.yaml"
+          done
+
+      - name: Reject mutable latest images and legacy placeholders
+        run: |
+          ! grep -R --line-number -E 'yourdockerhub|image: .*:latest' infra/kubernetes
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Run manifest/evidence tests
+        run: pytest -q tests/test_kubernetes_manifests.py tests/test_release_evidence_tools.py

@@ -1,0 +1,113 @@
+name: Kubernetes Promotion Evidence
+
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: Target environment
+        required: true
+        type: choice
+        options: [dev, staging, prod]
+      image:
+        description: Full image reference; production requires @sha256 digest
+        required: true
+        type: string
+      deploy:
+        description: Apply to the configured cluster instead of render-only evidence
+        required: true
+        default: false
+        type: boolean
+
+permissions:
+  contents: read
+
+jobs:
+  promote:
+    runs-on: ubuntu-latest
+    environment: ${{ inputs.environment }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Kustomize
+        uses: imranismail/setup-kustomize@v2
+
+      - name: Set up kubectl
+        uses: azure/setup-kubectl@v4
+
+      - name: Render immutable candidate manifest
+        env:
+          TARGET_ENV: ${{ inputs.environment }}
+          IMAGE: ${{ inputs.image }}
+        run: |
+          set -euo pipefail
+          cd "infra/kubernetes/overlays/${TARGET_ENV}"
+          kustomize edit set image "api-gateway=${IMAGE}"
+          kustomize build . > "$RUNNER_TEMP/rendered.yaml"
+          grep -n "image:" "$RUNNER_TEMP/rendered.yaml"
+
+      - name: Client-side manifest validation
+        run: kubectl apply --dry-run=client --validate=false -f "$RUNNER_TEMP/rendered.yaml"
+
+      - name: Configure cluster credentials
+        if: ${{ inputs.deploy }}
+        env:
+          KUBE_CONFIG_DATA: ${{ secrets.KUBE_CONFIG_DATA }}
+        run: |
+          test -n "$KUBE_CONFIG_DATA"
+          printf '%s' "$KUBE_CONFIG_DATA" | base64 --decode > "$RUNNER_TEMP/kubeconfig"
+          echo "KUBECONFIG=$RUNNER_TEMP/kubeconfig" >> "$GITHUB_ENV"
+
+      - name: Capture current revision
+        if: ${{ inputs.deploy }}
+        id: before
+        run: |
+          revision=$(kubectl rollout history deployment/api-gateway | awk 'NR>2 && $1 ~ /^[0-9]+$/ {print $1}' | tail -n 1)
+          echo "revision=${revision:-unknown}" >> "$GITHUB_OUTPUT"
+
+      - name: Apply and verify rollout
+        if: ${{ inputs.deploy }}
+        run: |
+          kubectl apply -f "$RUNNER_TEMP/rendered.yaml"
+          kubectl rollout status deployment/api-gateway --timeout=180s
+
+      - name: Capture promoted revision
+        if: ${{ inputs.deploy }}
+        id: after
+        run: |
+          revision=$(kubectl rollout history deployment/api-gateway | awk 'NR>2 && $1 ~ /^[0-9]+$/ {print $1}' | tail -n 1)
+          echo "revision=${revision:-unknown}" >> "$GITHUB_OUTPUT"
+
+      - name: Record render-only evidence
+        if: ${{ !inputs.deploy }}
+        run: |
+          python scripts/k8s_release_evidence.py \
+            --action promote \
+            --environment '${{ inputs.environment }}' \
+            --image '${{ inputs.image }}' \
+            --git-sha '${{ github.sha }}' \
+            --manifest "$RUNNER_TEMP/rendered.yaml" \
+            --deployment-status rendered \
+            --output evidence/kubernetes-deployment-results.json
+
+      - name: Record applied promotion evidence
+        if: ${{ inputs.deploy }}
+        run: |
+          python scripts/k8s_release_evidence.py \
+            --action promote \
+            --environment '${{ inputs.environment }}' \
+            --image '${{ inputs.image }}' \
+            --git-sha '${{ github.sha }}' \
+            --manifest "$RUNNER_TEMP/rendered.yaml" \
+            --deployment-status applied \
+            --from-revision '${{ steps.before.outputs.revision }}' \
+            --to-revision '${{ steps.after.outputs.revision }}' \
+            --output evidence/kubernetes-deployment-results.json
+
+      - name: Upload promotion evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: kubernetes-promotion-${{ inputs.environment }}-${{ github.sha }}
+          path: |
+            ${{ runner.temp }}/rendered.yaml
+            evidence/kubernetes-deployment-results.json
+          if-no-files-found: error

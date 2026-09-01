@@ -1,0 +1,75 @@
+name: Kubernetes Rollback Evidence
+
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: Environment to roll back
+        required: true
+        type: choice
+        options: [dev, staging, prod]
+      revision:
+        description: Deployment revision to restore
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  rollback:
+    runs-on: ubuntu-latest
+    environment: ${{ inputs.environment }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up kubectl
+        uses: azure/setup-kubectl@v4
+
+      - name: Configure cluster credentials
+        env:
+          KUBE_CONFIG_DATA: ${{ secrets.KUBE_CONFIG_DATA }}
+        run: |
+          test -n "$KUBE_CONFIG_DATA"
+          printf '%s' "$KUBE_CONFIG_DATA" | base64 --decode > "$RUNNER_TEMP/kubeconfig"
+          echo "KUBECONFIG=$RUNNER_TEMP/kubeconfig" >> "$GITHUB_ENV"
+
+      - name: Capture current revision
+        id: before
+        run: |
+          revision=$(kubectl rollout history deployment/api-gateway | awk 'NR>2 && $1 ~ /^[0-9]+$/ {print $1}' | tail -n 1)
+          echo "revision=${revision:-unknown}" >> "$GITHUB_OUTPUT"
+
+      - name: Roll back and verify
+        run: |
+          kubectl rollout undo deployment/api-gateway --to-revision='${{ inputs.revision }}'
+          kubectl rollout status deployment/api-gateway --timeout=180s
+          kubectl get deployment api-gateway -o yaml > "$RUNNER_TEMP/rollback-deployment.yaml"
+
+      - name: Capture rollback image
+        id: image
+        run: |
+          image=$(kubectl get deployment api-gateway -o jsonpath='{.spec.template.spec.containers[?(@.name=="api-gateway")].image}')
+          echo "image=$image" >> "$GITHUB_OUTPUT"
+
+      - name: Record rollback evidence
+        run: |
+          python scripts/k8s_release_evidence.py \
+            --action rollback \
+            --environment '${{ inputs.environment }}' \
+            --image '${{ steps.image.outputs.image }}' \
+            --git-sha '${{ github.sha }}' \
+            --manifest "$RUNNER_TEMP/rollback-deployment.yaml" \
+            --deployment-status applied \
+            --from-revision '${{ steps.before.outputs.revision }}' \
+            --to-revision '${{ inputs.revision }}' \
+            --output evidence/kubernetes-deployment-results.json
+
+      - name: Upload rollback evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: kubernetes-rollback-${{ inputs.environment }}-${{ github.sha }}
+          path: |
+            ${{ runner.temp }}/rollback-deployment.yaml
+            evidence/kubernetes-deployment-results.json
+          if-no-files-found: error
