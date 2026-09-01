@@ -23,7 +23,7 @@ def _decode_record(record: dict[str, Any]) -> dict[str, Any]:
         raise ValueError("MSK record value is not valid base64-encoded JSON") from exc
 
     if not isinstance(payload, dict):
-        raise ValueError("MSK event payload must be a JSON object")
+        raise TypeError("MSK event payload must be a JSON object")
 
     event_type = payload.get("event_type") or payload.get("type")
     if not isinstance(event_type, str) or not event_type.strip():
@@ -72,7 +72,7 @@ def lambda_handler(
 
     for partition_records in event.get("records", {}).values():
         if not isinstance(partition_records, list):
-            raise ValueError("MSK event records must be grouped into lists")
+            raise TypeError("MSK event records must be grouped into lists")
 
         for record in partition_records:
             payload = _decode_record(record)
