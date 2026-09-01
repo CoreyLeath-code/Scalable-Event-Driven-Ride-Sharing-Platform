@@ -65,7 +65,7 @@ jobs:
 
       - name: Run quality gates
         run: |
-          black --check . --line-length=100
+          black --diff --check . --line-length=100
           ruff check .
           mypy models.py utils.py event_bus.py location_store.py matching_engine.py pricing_engine.py consumer.py --ignore-missing-imports
           pytest
