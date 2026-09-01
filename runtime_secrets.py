@@ -25,7 +25,7 @@ def load_secret_json(secret_id: str, *, client: Any = None) -> dict[str, Any]:
         raise RuntimeError("Secrets Manager secret must contain valid JSON") from exc
 
     if not isinstance(payload, dict):
-        raise RuntimeError("Secrets Manager secret JSON must be an object")
+        raise TypeError("Secrets Manager secret JSON must be an object")
     return payload
 
 
