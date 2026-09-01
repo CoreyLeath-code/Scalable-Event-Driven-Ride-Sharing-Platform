@@ -1,6 +1,6 @@
 # Linters and formatters
 flake8
-black
+black==26.5.1
 mypy
 ruff
 
