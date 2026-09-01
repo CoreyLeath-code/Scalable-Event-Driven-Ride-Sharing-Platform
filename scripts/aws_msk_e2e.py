@@ -39,7 +39,7 @@ def unwrap_sns_sqs_body(body: str) -> dict[str, Any]:
     outer = json.loads(body)
     message = outer.get("Message")
     if not isinstance(message, str):
-        raise ValueError("SQS probe message does not contain an SNS Message string")
+        raise TypeError("SQS probe message does not contain an SNS Message string")
     payload = json.loads(message)
     if not isinstance(payload, dict):
         raise TypeError("SNS Message must decode to a JSON object")
