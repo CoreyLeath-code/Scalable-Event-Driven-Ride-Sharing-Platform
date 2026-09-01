@@ -15,10 +15,7 @@ def test_base_deployment_has_parameterized_image_and_rollout_safety():
 
 
 def test_environment_overlays_are_explicit_and_do_not_use_latest():
-    expected_image = (
-        "newName: ghcr.io/coreyleath-code/"
-        "scalable-event-driven-ride-sharing-platform"
-    )
+    expected_image = "newName: ghcr.io/coreyleath-code/scalable-event-driven-ride-sharing-platform"
     for environment in ("dev", "staging", "prod"):
         overlay_path = K8S / "overlays" / environment / "kustomization.yaml"
         overlay = overlay_path.read_text(encoding="utf-8")
