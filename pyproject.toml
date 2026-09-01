@@ -44,7 +44,7 @@ py-modules = [
 ]
 
 [tool.setuptools.packages.find]
-include = ["shared*"]
+include = ["shared*", "serverless*"]
 namespaces = true
 
 [tool.black]
