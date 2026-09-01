@@ -5,52 +5,25 @@ logger = get_logger("DriverLocationConsumer")
 
 
 class DriverLocationConsumer:
-    """
-    Listens for incoming driver telemetry updates and stores them in
-    DriverLocationStore.
-
-    Expected event format:
-    {
-        "driver_id": "d123",
-        "lat": 40.712,
-        "lon": -74.005,
-        "timestamp": "...",
-        "status": "available"
-    }
-    """
+    """Validate driver telemetry updates and store accepted events."""
 
     def __init__(self, event_bus, store):
         self.event_bus = event_bus
         self.store = store
         self.logger = logger
 
-    # ------------------------------------------------------------
-    # Handle Incoming Driver Location Updates
-    # ------------------------------------------------------------
-
     async def handle_driver_location(self, data: dict):
-        """
-        Convert dictionary → Pydantic model → update store.
-        """
-
+        """Convert a dictionary to the typed event model and update the store."""
         try:
             event = DriverLocationEvent(**data)
-        except (TypeError, ValueError) as e:
-            self.logger.error(f"Invalid driver location event: {e}")
+        except (TypeError, ValueError):
+            self.logger.error("Invalid driver location event rejected")
             return
 
-        # Update the driver store
         self.store.upsert_driver(event)
-
-        self.logger.info(f"Driver update processed: {event.driver_id} @ ({event.lat}, {event.lon})")
-
-    # ------------------------------------------------------------
-    # Subscribe to EventBus Topic
-    # ------------------------------------------------------------
+        self.logger.info("Driver update processed: %s", event.driver_id)
 
     async def start(self):
-        """
-        Begins listening to driver_location_updates topic.
-        """
+        """Begin listening to the driver_location_updates topic."""
         self.logger.info("DriverLocationConsumer listening for driver updates...")
         await self.event_bus.subscribe("driver_location_updates", self.handle_driver_location)

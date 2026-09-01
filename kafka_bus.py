@@ -2,25 +2,21 @@ import json
 
 from aiokafka import AIOKafkaConsumer, AIOKafkaProducer
 
-from .base import EventBus
+from event_bus import EventBus
 
 
 class KafkaEventBus(EventBus):
-    """
-    Kafka implementation of the EventBus interface.
-    Uses aiokafka for async publish/subscribe.
-    """
+    """Kafka implementation using aiokafka for async publish/subscribe."""
 
     def __init__(self, bootstrap_servers="localhost:9092", group_id="ride-sharing"):
         self.bootstrap_servers = bootstrap_servers
         self.group_id = group_id
         self.producer = None
-        self.consumer = None
 
     async def connect(self):
         self.producer = AIOKafkaProducer(
             bootstrap_servers=self.bootstrap_servers,
-            value_serializer=lambda v: json.dumps(v).encode("utf-8"),
+            value_serializer=lambda value: json.dumps(value).encode("utf-8"),
         )
         await self.producer.start()
 
@@ -34,16 +30,16 @@ class KafkaEventBus(EventBus):
             topic,
             bootstrap_servers=self.bootstrap_servers,
             group_id=self.group_id,
-            value_deserializer=lambda v: json.loads(v.decode("utf-8")),
+            value_deserializer=lambda value: json.loads(value.decode("utf-8")),
         )
         await consumer.start()
-
         try:
-            async for msg in consumer:
-                await handler(msg.value)
+            async for message in consumer:
+                await handler(message.value)
         finally:
             await consumer.stop()
 
     async def close(self):
         if self.producer:
             await self.producer.stop()
+            self.producer = None

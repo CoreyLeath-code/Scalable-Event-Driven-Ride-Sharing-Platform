@@ -1,5 +1,6 @@
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, Depends, HTTPException
 
+from auth import require_authenticated_request
 from utils import get_logger
 
 logger = get_logger("DriverLocationAPI")
@@ -9,11 +10,9 @@ router = APIRouter()
 DRIVER_STORE = None
 
 
-@router.get("/drivers")
+@router.get("/drivers", dependencies=[Depends(require_authenticated_request)])
 async def get_all_drivers():
-    """
-    Returns all active drivers and their current coordinates.
-    """
+    """Return active drivers and current coordinates to authenticated callers."""
     if DRIVER_STORE is None:
         raise HTTPException(500, "Driver store not initialized.")
 
@@ -21,11 +20,9 @@ async def get_all_drivers():
     return {"count": len(drivers), "drivers": drivers}
 
 
-@router.get("/drivers/{driver_id}")
+@router.get("/drivers/{driver_id}", dependencies=[Depends(require_authenticated_request)])
 async def get_driver(driver_id: str):
-    """
-    Returns location data for a specific driver.
-    """
+    """Return location data for a specific driver to an authenticated caller."""
     if DRIVER_STORE is None:
         raise HTTPException(500, "Driver store not initialized.")
 
@@ -36,11 +33,9 @@ async def get_driver(driver_id: str):
     return driver
 
 
-@router.get("/count")
+@router.get("/count", dependencies=[Depends(require_authenticated_request)])
 async def get_driver_count():
-    """
-    Quick counter to see how many drivers are active.
-    """
+    """Return the number of active drivers to an authenticated caller."""
     if DRIVER_STORE is None:
         raise HTTPException(500, "Driver store not initialized.")
 
@@ -62,7 +57,7 @@ async def readiness_check():
     try:
         ready = DRIVER_STORE.is_ready()
     except Exception as exc:
-        logger.error("Driver store readiness check failed: %s", exc)
+        logger.error("Driver store readiness check failed")
         raise HTTPException(503, "Driver store is unavailable.") from exc
 
     if not ready:

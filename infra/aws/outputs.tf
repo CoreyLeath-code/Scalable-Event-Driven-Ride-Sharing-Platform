@@ -33,7 +33,27 @@ output "cloudwatch_dashboard_name" {
   value       = aws_cloudwatch_dashboard.serverless.dashboard_name
 }
 
+output "effective_msk_cluster_arn" {
+  description = "ARN of the existing or optionally created development MSK cluster used by the Lambda event-source mapping."
+  value       = local.effective_msk_cluster_arn
+}
+
 output "msk_event_source_enabled" {
   description = "Whether Terraform creates the Amazon MSK to Lambda event-source mapping."
-  value       = var.msk_cluster_arn != null
+  value       = local.effective_msk_cluster_arn != null
+}
+
+output "integration_probe_queue_url" {
+  description = "SQS probe queue used to measure the real MSK-to-SNS event path when enabled."
+  value       = try(aws_sqs_queue.integration_probe[0].url, null)
+}
+
+output "runtime_secret_arn" {
+  description = "ARN of the optional KMS-protected runtime secret metadata resource."
+  value       = try(aws_secretsmanager_secret.runtime[0].arn, null)
+}
+
+output "runtime_secret_reader_policy_arn" {
+  description = "ARN of the optional least-privilege policy for reading the runtime secret."
+  value       = try(aws_iam_policy.runtime_secret_reader[0].arn, null)
 }

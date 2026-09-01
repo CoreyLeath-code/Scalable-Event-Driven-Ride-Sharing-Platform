@@ -1,0 +1,5 @@
+{
+  "schema_version": 1,
+  "status": "not_run",
+  "reason": "Promotion and rollback workflows generate evidence artifacts when explicitly run. This placeholder does not claim a Kubernetes deployment occurred."
+}

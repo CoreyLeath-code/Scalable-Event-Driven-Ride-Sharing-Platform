@@ -1,0 +1,24 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+resources:
+  - ../../base
+
+labels:
+  - pairs:
+      app.kubernetes.io/environment: staging
+
+images:
+  - name: api-gateway
+    newName: ghcr.io/coreyleath-code/scalable-event-driven-ride-sharing-platform
+    newTag: staging-unset
+
+configMapGenerator:
+  - name: ride-sharing-runtime
+    behavior: merge
+    literals:
+      - APP_ENV=staging
+      - AUTH_REQUIRED=true
+      - AUTH_ISSUER=https://replace-me.example
+      - AUTH_AUDIENCE=replace-me
+      - DRIVER_LOCATION_REDIS_SECRET_ID=ride-sharing/staging/runtime

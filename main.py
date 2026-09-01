@@ -8,16 +8,13 @@ from api_router import router
 from consumer import DriverLocationConsumer
 from event_bus import EventBus
 from location_store import create_driver_store
+from runtime_secrets import resolve_driver_redis_url
 from utils import get_logger
-
-# ------------------------------------------------------------
-# INITIALIZATION
-# ------------------------------------------------------------
 
 logger = get_logger("DriverLocationMain")
 
 event_bus = EventBus()
-driver_store = create_driver_store(os.getenv("DRIVER_LOCATION_REDIS_URL"))
+driver_store = create_driver_store(resolve_driver_redis_url())
 
 app = FastAPI(
     title="Driver Location Service",
@@ -35,38 +32,17 @@ async def optional_instance_id_header(request, call_next):
     return response
 
 
-# ------------------------------------------------------------
-# STARTUP SEQUENCE
-# ------------------------------------------------------------
-
-
 @app.on_event("startup")
 async def startup_event():
-
     logger.info("Starting Driver Location Service...")
-
-    # Inject store into API router
     api_router.DRIVER_STORE = driver_store
-
-    # Initialize consumer
     consumer = DriverLocationConsumer(event_bus=event_bus, store=driver_store)
-
-    # Subscribe to driver location update events
     await event_bus.subscribe("driver_location_updates", consumer.handle_driver_location)
-
     logger.info("Driver Location Service started successfully.")
 
 
-# ------------------------------------------------------------
-# ROUTER
-# ------------------------------------------------------------
-
 app.include_router(router, prefix="/driver-location")
 
-
-# ------------------------------------------------------------
-# LOCAL RUNNER
-# ------------------------------------------------------------
 
 if __name__ == "__main__":
     import uvicorn

@@ -1,0 +1,109 @@
+name: Real AWS MSK Integration Evidence
+
+on:
+  workflow_dispatch:
+    inputs:
+      aws_region:
+        description: AWS region containing the development VPC
+        required: true
+        default: us-east-1
+        type: string
+      vpc_id:
+        description: Development VPC ID
+        required: true
+        type: string
+      subnet_ids_json:
+        description: JSON array of at least two private subnet IDs
+        required: true
+        type: string
+      samples:
+        description: Number of sequential end-to-end probes
+        required: true
+        default: "20"
+        type: string
+      destroy_after:
+        description: Destroy the temporary MSK integration environment after evidence collection
+        required: true
+        default: true
+        type: boolean
+
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  real-msk-evidence:
+    name: Real MSK end-to-end evidence
+    runs-on: [self-hosted, linux, aws-msk-dev]
+    environment: development
+    timeout-minutes: 90
+    env:
+      AWS_REGION: ${{ inputs.aws_region }}
+      TF_VAR_aws_region: ${{ inputs.aws_region }}
+      TF_VAR_create_dev_msk_cluster: "true"
+      TF_VAR_enable_integration_probe: "true"
+      TF_VAR_dev_msk_vpc_id: ${{ inputs.vpc_id }}
+      TF_VAR_dev_msk_subnet_ids: ${{ inputs.subnet_ids_json }}
+      LAMBDA_REQUESTS_PER_MILLION_USD: ${{ vars.LAMBDA_REQUESTS_PER_MILLION_USD }}
+      SQS_REQUESTS_PER_MILLION_USD: ${{ vars.SQS_REQUESTS_PER_MILLION_USD }}
+      SNS_PUBLISHES_PER_MILLION_USD: ${{ vars.SNS_PUBLISHES_PER_MILLION_USD }}
+      MSK_CLUSTER_HOURLY_USD: ${{ vars.MSK_CLUSTER_HOURLY_USD }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Configure AWS credentials with OIDC
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_MSK_INTEGRATION_ROLE_ARN }}
+          aws-region: ${{ inputs.aws_region }}
+
+      - name: Set up Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: "1.9.8"
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install integration dependencies
+        run: python -m pip install -r requirements.txt -r requirements-dev.txt
+
+      - name: Apply development integration environment
+        working-directory: infra/aws
+        run: |
+          terraform init
+          terraform apply -auto-approve
+
+      - name: Allow event source mapping to become active
+        run: sleep 60
+
+      - name: Capture Terraform outputs
+        id: terraform
+        working-directory: infra/aws
+        run: |
+          echo "cluster_arn=$(terraform output -raw effective_msk_cluster_arn)" >> "$GITHUB_OUTPUT"
+          echo "probe_queue_url=$(terraform output -raw integration_probe_queue_url)" >> "$GITHUB_OUTPUT"
+
+      - name: Measure real end-to-end path
+        run: |
+          python scripts/aws_msk_e2e.py \
+            --cluster-arn '${{ steps.terraform.outputs.cluster_arn }}' \
+            --probe-queue-url '${{ steps.terraform.outputs.probe_queue_url }}' \
+            --samples '${{ inputs.samples }}' \
+            --output evidence/aws-msk-integration-results.json
+
+      - name: Upload measured evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: aws-msk-integration-evidence-${{ github.sha }}
+          path: evidence/aws-msk-integration-results.json
+          if-no-files-found: error
+
+      - name: Destroy temporary integration environment
+        if: ${{ always() && inputs.destroy_after }}
+        working-directory: infra/aws
+        run: terraform destroy -auto-approve

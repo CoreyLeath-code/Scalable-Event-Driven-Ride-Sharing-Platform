@@ -1,6 +1,6 @@
 # Linters and formatters
 flake8
-black
+black==26.5.1
 mypy
 ruff
 
@@ -12,6 +12,9 @@ pytest-asyncio
 # Broker integration testing (development/CI only)
 aiokafka>=0.11,<1.0
 aio-pika>=9,<10
+
+# Real Amazon MSK integration harness (manual/VPC runner only)
+aws-msk-iam-sasl-signer-python>=1.0,<2.0
 
 # Type-checking
 types-requests

@@ -1,0 +1,7 @@
+{
+  "schema_version": 1,
+  "status": "not_run",
+  "reason": "A real AWS development MSK run requires an authorized AWS account and a runner with private VPC network access. No latency or cost result is claimed until that workflow executes.",
+  "latency_ms": null,
+  "cost": null
+}
