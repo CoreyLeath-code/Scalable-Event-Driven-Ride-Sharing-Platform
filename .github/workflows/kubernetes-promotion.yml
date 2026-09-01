@@ -45,6 +45,23 @@ jobs:
           kustomize build . > "$RUNNER_TEMP/rendered.yaml"
           grep -n "image:" "$RUNNER_TEMP/rendered.yaml"
 
+      - name: Enforce promotion policy before apply
+        env:
+          TARGET_ENV: ${{ inputs.environment }}
+          IMAGE: ${{ inputs.image }}
+          DEPLOY: ${{ inputs.deploy }}
+        run: |
+          set -euo pipefail
+          if [[ "$TARGET_ENV" == "prod" && "$IMAGE" != *@sha256:* ]]; then
+            echo "Production promotion requires an immutable @sha256 image digest." >&2
+            exit 1
+          fi
+          if [[ "$DEPLOY" == "true" && "$TARGET_ENV" != "dev" ]] && \
+             grep -q "replace-me" "$RUNNER_TEMP/rendered.yaml"; then
+            echo "Staging/prod OIDC placeholders must be replaced before an actual deployment." >&2
+            exit 1
+          fi
+
       - name: Client-side manifest validation
         run: kubectl apply --dry-run=client --validate=false -f "$RUNNER_TEMP/rendered.yaml"
 
