@@ -10,16 +10,14 @@ import uuid
 from pathlib import Path
 from typing import Any
 
-import boto3
-from aws_msk_iam_sasl_signer import MSKAuthTokenProvider
-from kafka import KafkaProducer
-
 
 class MskTokenProvider:
     def __init__(self, region: str):
         self.region = region
 
     def token(self) -> str:
+        from aws_msk_iam_sasl_signer import MSKAuthTokenProvider
+
         token, _ = MSKAuthTokenProvider.generate_auth_token(self.region)
         return token
 
@@ -73,7 +71,9 @@ def env_float(name: str) -> float:
     return float(value) if value else 0.0
 
 
-def build_producer(bootstrap_servers: list[str], region: str) -> KafkaProducer:
+def build_producer(bootstrap_servers: list[str], region: str) -> Any:
+    from kafka import KafkaProducer
+
     return KafkaProducer(
         bootstrap_servers=bootstrap_servers,
         security_protocol="SASL_SSL",
@@ -104,6 +104,8 @@ def receive_probe(sqs_client: Any, queue_url: str, probe_id: str, timeout_second
 
 
 def main() -> None:
+    import boto3
+
     parser = argparse.ArgumentParser()
     parser.add_argument("--cluster-arn", required=True)
     parser.add_argument("--topic", default="ride.events")
