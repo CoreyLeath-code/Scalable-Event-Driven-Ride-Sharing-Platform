@@ -1,19 +1,20 @@
 # AWS Serverless Extension
 
-This repository keeps the latency-sensitive driver-location and matching paths as long-running services while adding AWS Lambda for asynchronous event processing. The AWS path is an optional deployment reference; it does not replace the local Kafka/Redis/Docker workflow.
+This repository keeps latency-sensitive driver-location and matching paths as long-running services while using AWS Lambda for asynchronous ride-event processing.
 
 ## Event flow
 
 ```mermaid
 flowchart LR
     Client[Rider / Driver Client] --> API[FastAPI / API Gateway]
-    API --> Kafka[(Kafka / Amazon MSK)]
-    Kafka --> Matching[Matching + Trip Services]
-    Kafka --> Processor[AWS Lambda\nride-event-processor]
+    API --> MSK[(Kafka / Amazon MSK)]
+    MSK --> Matching[Matching + Trip Services]
+    MSK --> Processor[AWS Lambda\nride-event-processor]
     Processor --> Queue[(Amazon SQS\nprocessed-events)]
     Queue --> Worker[AWS Lambda\nnotification-worker]
     Queue -. repeated failures .-> DLQ[(SQS DLQ)]
     Worker --> SNS[(Amazon SNS\nride-notifications)]
+    SNS -. integration evidence .-> Probe[(SQS probe queue)]
 
     Processor --> CW[CloudWatch Logs + Metrics]
     Worker --> CW
@@ -24,55 +25,40 @@ flowchart LR
     Alarms --> OpsSNS[(SNS operational-alerts)]
 ```
 
-## Why Lambda is used here
-
-Lambda is reserved for asynchronous work that can scale independently from the request path:
-
-- decoding and validating Amazon MSK event batches;
-- preserving Kafka topic, partition, and offset as an idempotency key;
-- handing events to SQS for retry isolation and buffering;
-- publishing selected lifecycle events to SNS;
-- reporting per-message SQS failures so successful records are not retried unnecessarily.
-
-Real-time matching and driver-location serving remain container/service concerns in this reference architecture. That avoids claiming that serverless is automatically the best choice for every latency-sensitive workload.
-
 ## Delivery semantics
 
-The MSK processor intentionally fails its invocation when a record cannot be decoded or SQS cannot accept the message. Kafka/Lambda delivery is therefore treated as **at least once**. Every forwarded envelope contains an `idempotency_key` derived from `topic:partition:offset`; downstream production consumers should persist and enforce that key before applying non-idempotent side effects.
+The MSK processor fails an invocation when a record cannot be decoded, contains prohibited direct PII, or cannot be handed to SQS. The path is therefore treated as **at least once**. Every forwarded envelope carries a Kafka-derived `topic:partition:offset` idempotency key. A production implementation still needs persistent idempotency enforcement before non-idempotent side effects.
 
-The notification worker uses SQS partial-batch failure responses. Invalid or failed messages are returned in `batchItemFailures`, allowing successful messages in the same batch to remain complete. After the configured receive limit, repeatedly failing messages move to the dead-letter queue.
+The notification worker uses SQS partial-batch failure responses. Repeatedly failing records eventually move to the DLQ.
 
 ## Terraform layout
 
 ```text
 infra/aws/
-|-- versions.tf
-|-- variables.tf
 |-- main.tf
+|-- dev_msk.tf
 |-- observability.tf
+|-- security.tf
+|-- variables.tf
 |-- outputs.tf
+|-- versions.tf
 `-- build/                # generated Lambda ZIPs are ignored
 ```
 
-The Terraform configuration creates:
+The reference stack can define:
 
-- `ride-event-processor` Lambda;
-- `notification-worker` Lambda;
-- processed-events SQS queue;
-- processed-events dead-letter queue;
-- ride-notifications SNS topic;
-- CloudWatch log groups with configurable retention;
-- CloudWatch dashboard for Lambda/SQS operational health;
-- CloudWatch alarms for errors, throttles, high p95 duration, SQS lag, DLQ activity, and record-level notification failures;
-- dedicated operational-alerts SNS topic with optional email subscription;
-- separate Lambda execution roles with scoped SQS/SNS permissions;
-- optional Amazon MSK event-source mapping.
+- two Python Lambda functions;
+- processed-events SQS queue + DLQ;
+- rider/driver notification SNS topic;
+- CloudWatch dashboard, alarms, log groups, and operator SNS alerts;
+- optional existing MSK event-source mapping;
+- optional private IAM-authenticated MSK Serverless development cluster;
+- optional SNS->SQS integration probe sink;
+- optional KMS-protected Secrets Manager metadata and least-privilege reader policy.
 
-See [`cloudwatch-observability.md`](cloudwatch-observability.md) for dashboard panels, alarm thresholds, triage guidance, and the monitoring production boundary.
+All billable development integration and secret resources are disabled by default.
 
-## Validate without deploying
-
-No AWS credentials are required for formatting and static validation:
+## Validate without AWS credentials
 
 ```bash
 cd infra/aws
@@ -81,74 +67,18 @@ terraform init -backend=false
 terraform validate
 ```
 
-The Lambda handlers are covered by normal repository tests and use injected fake AWS clients in tests, so unit validation does not require `boto3`, AWS credentials, or a live AWS account.
+The regular AWS unit tests inject fake clients and do not contact AWS.
 
-## Plan with CloudWatch alert delivery
+## Real MSK evidence
 
-```bash
-cd infra/aws
-terraform init
-terraform plan \
-  -var='aws_region=us-east-1' \
-  -var='alarm_email=operator@example.com'
-```
+See [`aws-msk-integration.md`](aws-msk-integration.md). A VPC-connected manual workflow can create a temporary MSK Serverless cluster, run synthetic probes through the complete asynchronous path, generate latency/cost-estimate JSON, and optionally destroy the temporary stack.
 
-When `alarm_email` is supplied, AWS requires the email recipient to confirm the SNS subscription before alarm messages are delivered.
+No real-cloud number is claimed until that workflow has actually run.
 
-## Plan with an Amazon MSK cluster
+## Security boundaries
 
-```bash
-cd infra/aws
-terraform init
-terraform plan \
-  -var='aws_region=us-east-1' \
-  -var='msk_cluster_arn=arn:aws:kafka:us-east-1:123456789012:cluster/example/uuid'
-```
+See [`security-and-pii.md`](security-and-pii.md). The Lambda ZIPs contain the direct-PII policy so the event boundary is enforced in the deployed function artifact itself rather than only in local application code.
 
-`msk_cluster_arn` defaults to `null`. When it is omitted, Terraform still creates the Lambda/SQS/SNS/CloudWatch reference stack but does not create the MSK event-source mapping.
+## Observability
 
-Before applying this against a real environment, verify the cluster's authentication mode, network reachability, Kafka topic name, encryption settings, service quotas, organization-specific IAM requirements, alarm ownership, and notification routing. Production workloads should also add tracing, secret management, idempotency persistence, load testing, measured SLOs/error budgets, and cost controls appropriate to the environment.
-
-## Lambda event contracts
-
-### Amazon MSK input
-
-The processor expects the standard Lambda MSK record shape with base64-encoded JSON in each record's `value` field. The decoded object must contain `event_type` or `type`.
-
-Example decoded event:
-
-```json
-{
-  "event_type": "ride.requested",
-  "ride_id": "ride-123",
-  "rider_id": "rider-7"
-}
-```
-
-Forwarded SQS envelope:
-
-```json
-{
-  "idempotency_key": "ride.events:0:42",
-  "source": "amazon-msk",
-  "topic": "ride.events",
-  "partition": 0,
-  "offset": 42,
-  "event": {
-    "event_type": "ride.requested",
-    "ride_id": "ride-123",
-    "rider_id": "rider-7"
-  }
-}
-```
-
-### SQS notification input
-
-The notification worker publishes these event types to SNS:
-
-- `driver.matched`
-- `trip.started`
-- `trip.completed`
-- `payment.processed`
-
-Other valid events are acknowledged and skipped rather than treated as failures.
+See [`cloudwatch-observability.md`](cloudwatch-observability.md) for dashboards, alarm thresholds, Logs Insights coverage, and the monitoring production boundary.
