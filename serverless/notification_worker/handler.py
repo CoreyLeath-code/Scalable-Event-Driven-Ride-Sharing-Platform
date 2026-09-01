@@ -29,11 +29,11 @@ def _extract_event(body: str) -> dict[str, Any]:
         raise ValueError("SQS record body must be valid JSON") from exc
 
     if not isinstance(envelope, dict):
-        raise ValueError("SQS record body must contain a JSON object")
+        raise TypeError("SQS record body must contain a JSON object")
 
     payload = envelope.get("event", envelope)
     if not isinstance(payload, dict):
-        raise ValueError("Notification payload must be a JSON object")
+        raise TypeError("Notification payload must be a JSON object")
 
     return payload
 
