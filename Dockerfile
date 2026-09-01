@@ -7,7 +7,7 @@ COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
 COPY shared ./shared
-COPY api_router.py consumer.py event_bus.py location_store.py main.py models.py utils.py ./
+COPY api_router.py auth.py consumer.py event_bus.py location_store.py main.py models.py pii_policy.py runtime_secrets.py utils.py ./
 
 EXPOSE 8000
 
