@@ -46,5 +46,8 @@ jobs:
         with:
           python-version: "3.11"
 
+      - name: Install test dependency
+        run: python -m pip install pytest
+
       - name: Run manifest/evidence tests
         run: pytest -q tests/test_kubernetes_manifests.py tests/test_release_evidence_tools.py
