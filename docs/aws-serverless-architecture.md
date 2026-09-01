@@ -14,8 +14,14 @@ flowchart LR
     Queue --> Worker[AWS Lambda\nnotification-worker]
     Queue -. repeated failures .-> DLQ[(SQS DLQ)]
     Worker --> SNS[(Amazon SNS\nride-notifications)]
-    Processor --> Logs1[CloudWatch Logs]
-    Worker --> Logs2[CloudWatch Logs]
+
+    Processor --> CW[CloudWatch Logs + Metrics]
+    Worker --> CW
+    Queue --> CW
+    DLQ --> CW
+    CW --> Dashboard[CloudWatch Dashboard]
+    CW --> Alarms[CloudWatch Alarms]
+    Alarms --> OpsSNS[(SNS operational-alerts)]
 ```
 
 ## Why Lambda is used here
@@ -43,6 +49,7 @@ infra/aws/
 |-- versions.tf
 |-- variables.tf
 |-- main.tf
+|-- observability.tf
 |-- outputs.tf
 `-- build/                # generated Lambda ZIPs are ignored
 ```
@@ -55,8 +62,13 @@ The Terraform configuration creates:
 - processed-events dead-letter queue;
 - ride-notifications SNS topic;
 - CloudWatch log groups with configurable retention;
+- CloudWatch dashboard for Lambda/SQS operational health;
+- CloudWatch alarms for errors, throttles, high p95 duration, SQS lag, DLQ activity, and record-level notification failures;
+- dedicated operational-alerts SNS topic with optional email subscription;
 - separate Lambda execution roles with scoped SQS/SNS permissions;
 - optional Amazon MSK event-source mapping.
+
+See [`cloudwatch-observability.md`](cloudwatch-observability.md) for dashboard panels, alarm thresholds, triage guidance, and the monitoring production boundary.
 
 ## Validate without deploying
 
@@ -64,11 +76,24 @@ No AWS credentials are required for formatting and static validation:
 
 ```bash
 cd infra/aws
+terraform fmt -check -recursive
 terraform init -backend=false
 terraform validate
 ```
 
 The Lambda handlers are covered by normal repository tests and use injected fake AWS clients in tests, so unit validation does not require `boto3`, AWS credentials, or a live AWS account.
+
+## Plan with CloudWatch alert delivery
+
+```bash
+cd infra/aws
+terraform init
+terraform plan \
+  -var='aws_region=us-east-1' \
+  -var='alarm_email=operator@example.com'
+```
+
+When `alarm_email` is supplied, AWS requires the email recipient to confirm the SNS subscription before alarm messages are delivered.
 
 ## Plan with an Amazon MSK cluster
 
@@ -80,9 +105,9 @@ terraform plan \
   -var='msk_cluster_arn=arn:aws:kafka:us-east-1:123456789012:cluster/example/uuid'
 ```
 
-`msk_cluster_arn` defaults to `null`. When it is omitted, Terraform still creates the Lambda/SQS/SNS reference stack but does not create the MSK event-source mapping.
+`msk_cluster_arn` defaults to `null`. When it is omitted, Terraform still creates the Lambda/SQS/SNS/CloudWatch reference stack but does not create the MSK event-source mapping.
 
-Before applying this against a real environment, verify the cluster's authentication mode, network reachability, Kafka topic name, encryption settings, service quotas, and organization-specific IAM requirements. Production workloads should also add alarms, tracing, secret management, idempotency persistence, load testing, and cost/error-budget controls appropriate to the environment.
+Before applying this against a real environment, verify the cluster's authentication mode, network reachability, Kafka topic name, encryption settings, service quotas, organization-specific IAM requirements, alarm ownership, and notification routing. Production workloads should also add tracing, secret management, idempotency persistence, load testing, measured SLOs/error budgets, and cost controls appropriate to the environment.
 
 ## Lambda event contracts
 

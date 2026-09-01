@@ -23,6 +23,16 @@ output "ride_notifications_topic_arn" {
   value       = aws_sns_topic.ride_notifications.arn
 }
 
+output "operational_alerts_topic_arn" {
+  description = "SNS topic used by CloudWatch operational alarms."
+  value       = aws_sns_topic.operational_alerts.arn
+}
+
+output "cloudwatch_dashboard_name" {
+  description = "Name of the CloudWatch serverless observability dashboard."
+  value       = aws_cloudwatch_dashboard.serverless.dashboard_name
+}
+
 output "msk_event_source_enabled" {
   description = "Whether Terraform creates the Amazon MSK to Lambda event-source mapping."
   value       = var.msk_cluster_arn != null
