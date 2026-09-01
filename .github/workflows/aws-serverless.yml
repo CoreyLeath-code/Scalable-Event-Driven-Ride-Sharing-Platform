@@ -5,22 +5,30 @@ on:
     paths:
       - "serverless/**"
       - "infra/aws/**"
+      - "scripts/aws_msk_e2e.py"
       - "tests/test_aws_lambda_handlers.py"
+      - "tests/test_aws_security_boundaries.py"
+      - "tests/test_release_evidence_tools.py"
       - ".github/workflows/aws-serverless.yml"
+      - ".github/workflows/aws-msk-integration.yml"
   push:
     branches: ["main"]
     paths:
       - "serverless/**"
       - "infra/aws/**"
+      - "scripts/aws_msk_e2e.py"
       - "tests/test_aws_lambda_handlers.py"
+      - "tests/test_aws_security_boundaries.py"
+      - "tests/test_release_evidence_tools.py"
       - ".github/workflows/aws-serverless.yml"
+      - ".github/workflows/aws-msk-integration.yml"
 
 permissions:
   contents: read
 
 jobs:
-  lambda-unit-tests:
-    name: Lambda unit tests
+  aws-unit-tests:
+    name: AWS credential-free unit tests
     runs-on: ubuntu-latest
 
     steps:
@@ -41,8 +49,12 @@ jobs:
           python -m pip install --upgrade pip
           python -m pip install -r requirements.txt -r requirements-dev.txt
 
-      - name: Run Lambda handler tests
-        run: pytest -q tests/test_aws_lambda_handlers.py
+      - name: Run AWS and evidence unit tests
+        run: |
+          pytest -q \
+            tests/test_aws_lambda_handlers.py \
+            tests/test_aws_security_boundaries.py \
+            tests/test_release_evidence_tools.py
 
   terraform-validate:
     name: Terraform format and validate
