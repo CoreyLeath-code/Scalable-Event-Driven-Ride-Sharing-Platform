@@ -36,7 +36,9 @@ async def require_driver_location_api_key(request: Request, call_next):
     if protected:
         expected = os.getenv("DRIVER_LOCATION_API_KEY", "")
         if not expected:
-            return JSONResponse(status_code=503, content={"detail": "API authorization unavailable"})
+            return JSONResponse(
+                status_code=503, content={"detail": "API authorization unavailable"}
+            )
         supplied = request.headers.get("X-Driver-API-Key", "")
         if not secrets.compare_digest(supplied, expected):
             return JSONResponse(status_code=401, content={"detail": "Unauthorized"})
