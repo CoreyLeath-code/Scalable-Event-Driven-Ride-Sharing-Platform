@@ -1,4 +1,5 @@
 """Security checks for sensitive driver-location endpoints."""
+
 import httpx
 import pytest
 
