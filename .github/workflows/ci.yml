@@ -112,6 +112,9 @@ jobs:
     name: Driver API load-balancer integration
     runs-on: ubuntu-latest
     timeout-minutes: 15
+    env:
+      # Disposable test-only authorization key.
+      DRIVER_LOCATION_API_KEY: integration-ci-key-not-for-production
 
     steps:
       - name: Checkout repository
@@ -146,7 +149,9 @@ jobs:
         run: |
           docker compose exec -T redis redis-cli HSET driver-locations ci-driver \
             '{"driver_id":"ci-driver","lat":40.7128,"lon":-74.0060,"timestamp":"2026-01-01T00:00:00Z","status":"available"}'
-          curl --fail --silent --show-error http://localhost:8000/driver-location/drivers/ci-driver \
+          curl --fail --silent --show-error \
+            -H "X-Driver-API-Key: $DRIVER_LOCATION_API_KEY" \
+            http://localhost:8000/driver-location/drivers/ci-driver \
             | python -c "import json, sys; assert json.load(sys.stdin)['driver_id'] == 'ci-driver'"
 
       - name: Verify requests reach multiple replicas
