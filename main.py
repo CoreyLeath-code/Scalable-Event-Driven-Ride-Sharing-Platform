@@ -1,7 +1,9 @@
 import os
+import secrets
 import socket
 
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
+from fastapi.responses import JSONResponse
 
 import api_router
 from api_router import router
@@ -27,7 +29,22 @@ app = FastAPI(
 
 
 @app.middleware("http")
-async def optional_instance_id_header(request, call_next):
+async def require_driver_location_api_key(request: Request, call_next):
+    """Fail closed for sensitive driver-location reads without a configured API key."""
+    path = request.url.path
+    protected = path == "/driver-location/count" or path.startswith("/driver-location/drivers")
+    if protected:
+        expected = os.getenv("DRIVER_LOCATION_API_KEY", "")
+        if not expected:
+            return JSONResponse(status_code=503, content={"detail": "API authorization unavailable"})
+        supplied = request.headers.get("X-Driver-API-Key", "")
+        if not secrets.compare_digest(supplied, expected):
+            return JSONResponse(status_code=401, content={"detail": "Unauthorized"})
+    return await call_next(request)
+
+
+@app.middleware("http")
+async def optional_instance_id_header(request: Request, call_next):
     """Expose a container identity only when Compose smoke tests request it."""
     response = await call_next(request)
     if os.getenv("EXPOSE_INSTANCE_ID") == "true":
@@ -42,31 +59,15 @@ async def optional_instance_id_header(request, call_next):
 
 @app.on_event("startup")
 async def startup_event():
-
     logger.info("Starting Driver Location Service...")
-
-    # Inject store into API router
     api_router.DRIVER_STORE = driver_store
-
-    # Initialize consumer
     consumer = DriverLocationConsumer(event_bus=event_bus, store=driver_store)
-
-    # Subscribe to driver location update events
     await event_bus.subscribe("driver_location_updates", consumer.handle_driver_location)
-
     logger.info("Driver Location Service started successfully.")
 
 
-# ------------------------------------------------------------
-# ROUTER
-# ------------------------------------------------------------
-
 app.include_router(router, prefix="/driver-location")
 
-
-# ------------------------------------------------------------
-# LOCAL RUNNER
-# ------------------------------------------------------------
 
 if __name__ == "__main__":
     import uvicorn
