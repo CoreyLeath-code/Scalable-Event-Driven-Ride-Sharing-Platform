@@ -21,6 +21,8 @@ class MatchingEngine:
     """
 
     def __init__(self, max_candidates: int = 25):
+        if isinstance(max_candidates, bool) or not isinstance(max_candidates, int) or max_candidates < 1:
+            raise ValueError("max_candidates must be a positive integer")
         self.max_candidates = max_candidates
         self.logger = get_logger("MatchingEngine")
 
