@@ -25,7 +25,8 @@ def test_pricing_engine_caps_zero_supply_at_high_surge():
 
 
 @pytest.mark.parametrize(
-    "demand,supply", [(-1, 10), (10, -1), (1.5, 2), (True, 2), (2, False)]
+    "demand,supply",
+    [(-1, 10), (10, -1), (1.5, 2), (True, 2), (2, False)],
 )
 def test_pricing_rejects_invalid_counts(demand, supply):
     with pytest.raises(ValueError):
