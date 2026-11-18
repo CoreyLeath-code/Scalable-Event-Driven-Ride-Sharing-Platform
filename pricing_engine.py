@@ -46,7 +46,9 @@ class PricingEngine:
             surge_multiplier = self.base_surge + (demand / supply * self.sensitivity)
 
         # Apply the advertised three-times-base cap to every demand scenario.
-        surge_multiplier = round(min(max(surge_multiplier, self.base_surge), self.base_surge * 3.0), 2)
+        surge_multiplier = round(
+            min(max(surge_multiplier, self.base_surge), self.base_surge * 3.0), 2
+        )
 
         self.logger.info(
             f"[Zone {zone_id}] Demand={demand}, Supply={supply}, Surge={surge_multiplier}"
