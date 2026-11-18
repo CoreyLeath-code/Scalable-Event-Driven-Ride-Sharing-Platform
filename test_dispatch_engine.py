@@ -1,5 +1,7 @@
 from datetime import datetime, timezone
 
+import pytest
+
 from matching_engine import MatchingEngine
 from models import DriverLocationEvent, TripRequestEvent
 
@@ -34,3 +36,9 @@ def test_dispatch_engine_selects_closest_driver():
     assert selected is not None
     assert selected.driver_id in {"A", "B"}
     # Both A and B are close; acceptable tie
+
+
+@pytest.mark.parametrize("max_candidates", [0, -1, True, 1.5])
+def test_dispatch_engine_rejects_invalid_candidate_limits(max_candidates):
+    with pytest.raises(ValueError, match="max_candidates"):
+        MatchingEngine(max_candidates=max_candidates)
