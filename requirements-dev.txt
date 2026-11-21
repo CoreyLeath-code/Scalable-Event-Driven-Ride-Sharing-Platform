@@ -12,7 +12,7 @@ pytest-asyncio
 httpx>=0.28,<1
 
 # Broker integration testing (development/CI only)
-aiokafka>=0.11,<1.0
+aiokafka>=0.14.0,<1.0
 aio-pika>=9.6.2,<10
 
 # Type-checking
