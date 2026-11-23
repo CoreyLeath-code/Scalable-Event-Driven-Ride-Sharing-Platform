@@ -9,7 +9,7 @@ pytest
 pytest-cov
 pytest-asyncio
 # ASGI client used by the driver-location authorization tests
-httpx>=0.28,<1
+httpx>=0.28.1,<1
 
 # Broker integration testing (development/CI only)
 aiokafka>=0.11,<1.0
