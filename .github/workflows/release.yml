@@ -116,7 +116,7 @@ jobs:
         run: echo "path=RELEASE_NOTES_${GITHUB_REF_NAME#v}.md" >> "$GITHUB_OUTPUT"
 
       - name: Create GitHub Release
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@v3
         with:
           body_path: ${{ steps.notes.outputs.path }}
           generate_release_notes: false
