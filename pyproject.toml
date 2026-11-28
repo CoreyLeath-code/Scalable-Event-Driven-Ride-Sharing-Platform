@@ -16,7 +16,7 @@ dependencies = [
     "pydantic>=2,<3",
     "pydantic-settings>=2,<3",
     "kafka-python>=2.0,<3.0",
-    "python-json-logger>=2,<4",
+    "python-json-logger>=2,<5",
     "redis>=5,<9",
     "prometheus-client>=0.20,<1.0",
 ]
